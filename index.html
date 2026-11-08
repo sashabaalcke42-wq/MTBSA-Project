@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mountain Biking SA · Race Calendar</title>
+  <meta name="description" content="Every South Australian mountain bike race in one place, explained in plain English.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="index.html">Mountain Biking <span>SA</span></a>
+      <nav>
+        <a href="index.html" aria-current="page">Calendar</a>
+        <a href="new-to-racing.html">New to racing?</a>
+        <a href="links.html">Useful links</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="list-view">
+      <h1>SA mountain bike race calendar</h1>
+      <p class="lead">Every race in South Australia in one place. Tap a race for the details in plain English, then enter on the official page.</p>
+
+      <div class="filters" role="group" aria-label="Filter races">
+        <label>Type
+          <select id="f-type"><option value="">All types</option></select>
+        </label>
+        <label>Region
+          <select id="f-region"><option value="">All regions</option></select>
+        </label>
+        <label class="check"><input type="checkbox" id="f-beginner"> Beginner friendly only</label>
+        <label class="check"><input type="checkbox" id="f-past"> Show past races</label>
+      </div>
+
+      <div id="races" aria-live="polite"><p class="muted">Loading races…</p></div>
+    </section>
+
+    <section id="detail-view" hidden></section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Mountain Biking SA is a community project. It isn't run by or affiliated with AusCycling or any club. Dates can change, so always check the official entry page before you go.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
