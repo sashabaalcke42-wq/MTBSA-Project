@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mountain Biking SA · Race Calendar</title>
-  <meta name="description" content="Every South Australian mountain bike race in one place, explained in plain English.">
+  <meta name="description" content="Every South Australian mountain bike race on one simple calendar.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,28 +14,34 @@
       <nav>
         <a href="index.html" aria-current="page">Calendar</a>
         <a href="new-to-racing.html">New to racing?</a>
-        <a href="links.html">Useful links</a>
+        <a href="links.html">Links</a>
       </nav>
     </div>
   </header>
 
   <main class="wrap">
-    <section id="list-view">
-      <h1>SA mountain bike race calendar</h1>
-      <p class="lead">Every race in South Australia in one place. Tap a race for the details in plain English, then enter on the official page.</p>
+    <section id="calendar-view">
+      <h1>SA race calendar</h1>
+      <p class="lead">Tap a race to see what it is and how to enter.</p>
 
-      <div class="filters" role="group" aria-label="Filter races">
-        <label>Type
-          <select id="f-type"><option value="">All types</option></select>
-        </label>
-        <label>Region
-          <select id="f-region"><option value="">All regions</option></select>
-        </label>
-        <label class="check"><input type="checkbox" id="f-beginner"> Beginner friendly only</label>
-        <label class="check"><input type="checkbox" id="f-past"> Show past races</label>
+      <div class="levels" id="levels" aria-label="Show race levels"></div>
+
+      <div class="month-bar">
+        <button type="button" class="nav-btn" id="prev" aria-label="Previous month">‹</button>
+        <h2 id="month-title" aria-live="polite"></h2>
+        <button type="button" class="nav-btn" id="next" aria-label="Next month">›</button>
       </div>
 
-      <div id="races" aria-live="polite"><p class="muted">Loading races…</p></div>
+      <div class="cal" role="grid" aria-labelledby="month-title">
+        <div class="cal-head" role="row">
+          <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+        </div>
+        <div class="cal-grid" id="grid"></div>
+      </div>
+      <p class="today-link"><button type="button" class="link-btn" id="today">Back to this month</button></p>
+
+      <h2 class="list-title" id="list-title">This month</h2>
+      <ul class="race-list" id="list"></ul>
     </section>
 
     <section id="detail-view" hidden></section>
@@ -43,7 +49,7 @@
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>Mountain Biking SA is a community project. It isn't run by or affiliated with AusCycling or any club. Dates can change, so always check the official entry page before you go.</p>
+      <p>A community project. Not run by AusCycling or any club. Always check the official race page before you go.</p>
     </div>
   </footer>
 
