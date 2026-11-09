@@ -17,9 +17,10 @@
   const grid = $('grid'), list = $('list'), monthTitle = $('month-title'), listTitle = $('list-title');
 
   let races = [];
-  const hidden = new Set();          // levels the viewer has switched off
+  const picked = new Set();          // levels the viewer has picked (none picked = show all)
   let shown = startOfMonth(new Date()); // month on screen
   let pickedDay = null;              // 'YYYY-MM-DD' when a day is tapped
+  let yearView = true;               // list shows the next 12 months until someone changes month
 
   // ---- CSV (handles quoted fields with commas) ----
   function parseCSV(text) {
@@ -60,23 +61,28 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const safeUrl = u => /^https?:\/\//i.test(u) ? u : '#';
   const tag = r => '<span class="tag lvl-' + levelKey(r.level) + '">' + esc(r.level) + '</span>';
-  const visible = () => races.filter(r => !hidden.has(levelKey(r.level)));
+  const visible = () => races.filter(r => !picked.size || picked.has(levelKey(r.level)));
 
-  // ---- Level buttons (tap to hide/show) ----
+  // ---- Level buttons ----
+  // Tap one to show only that level. Tap more to add them. Tap a picked one again to drop it.
   function drawLevels() {
-    $('levels').innerHTML = LEVELS.map(l =>
-      '<button type="button" class="level-btn lvl-' + l.key + '" data-key="' + l.key + '" aria-pressed="' + !hidden.has(l.key) + '" title="' + esc(l.help) + '">' +
-      '<span class="dot"></span>' + l.name + '</button>').join('');
-    $('levels').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
-      const k = b.dataset.key; hidden.has(k) ? hidden.delete(k) : hidden.add(k);
+    const box = $('levels');
+    box.classList.toggle('filtering', picked.size > 0);
+    box.innerHTML = LEVELS.map(l =>
+      '<button type="button" class="level-btn lvl-' + l.key + '" data-key="' + l.key + '" aria-pressed="' + picked.has(l.key) + '" title="' + esc(l.help) + '">' +
+      '<span class="dot"></span>' + l.name + '</button>').join('') +
+      (picked.size ? '<button type="button" class="link-btn" id="show-all">Show all</button>' : '');
+    box.querySelectorAll('.level-btn').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.key; picked.has(k) ? picked.delete(k) : picked.add(k);
       drawLevels(); drawMonth();
     }));
+    const all = $('show-all'); if (all) all.addEventListener('click', () => { picked.clear(); drawLevels(); drawMonth(); });
   }
 
   // ---- Month grid ----
   function drawMonth() {
     monthTitle.textContent = fmtMonth.format(shown);
-    $('today').hidden = +shown === +startOfMonth(new Date());
+    $('today').hidden = yearView;
     const y = shown.getFullYear(), m = shown.getMonth();
     const first = new Date(y, m, 1);
     const lead = (first.getDay() + 6) % 7;            // Monday-first
@@ -109,26 +115,42 @@
 
   // ---- Races under the calendar ----
   function drawList() {
-    const y = shown.getFullYear(), m = shown.getMonth();
-    const from = iso(new Date(y, m, 1)), to = iso(new Date(y, m + 1, 0));
+    let from, to;
+    if (yearView && !pickedDay) {
+      const now = new Date();
+      from = todayISO; to = iso(new Date(now.getFullYear() + 1, now.getMonth(), now.getDate() - 1));
+    } else {
+      const y = shown.getFullYear(), m = shown.getMonth();
+      from = iso(new Date(y, m, 1)); to = iso(new Date(y, m + 1, 0));
+    }
     let items = visible().filter(r => r.date <= to && endOf(r) >= from);
     if (pickedDay) items = items.filter(r => onDay(r, pickedDay));
     listTitle.innerHTML = pickedDay
-      ? esc(fmtLong.format(toDate(pickedDay))) + ' <button type="button" class="link-btn" id="clear-day">Show whole month</button>'
-      : 'Races in ' + esc(fmtMonth.format(shown));
+      ? esc(fmtLong.format(toDate(pickedDay))) + ' <button type="button" class="link-btn" id="clear-day">' + (yearView ? 'Show next 12 months' : 'Show whole month') + '</button>'
+      : yearView ? 'Races in the next 12 months' : 'Races in ' + esc(fmtMonth.format(shown));
     const clear = $('clear-day'); if (clear) clear.addEventListener('click', () => { pickedDay = null; drawMonth(); });
 
     if (!items.length) {
-      list.innerHTML = '<li class="empty">No races listed this month. Most SA racing runs from March to October, and new dates get added as clubs announce them.</li>';
+      list.innerHTML = '<li class="empty">' + (picked.size ? 'No races at that level ' + (yearView ? 'in the next 12 months' : 'this month') + '. Try picking another level, or tap "Show all".'
+        : yearView ? 'No races listed yet. New dates get added as clubs announce them.'
+        : 'No races listed this month. Most SA racing runs from March to October, and new dates get added as clubs announce them.') + '</li>';
       return;
     }
-    list.innerHTML = items.map(r =>
-      '<li><a class="race' + (isPast(r) ? ' done' : '') + '" href="#race/' + encodeURIComponent(r.id) + '">' +
+    // In the 12-month view, put a small month heading above each new month.
+    let lastMonth = '';
+    list.innerHTML = items.map(r => {
+      let head = '';
+      if (yearView && !pickedDay) {
+        const mk = (r.date < from ? from : r.date).slice(0, 7);
+        if (mk !== lastMonth) { lastMonth = mk; head = '<li class="list-month">' + esc(fmtMonth.format(toDate(mk + '-01'))) + '</li>'; }
+      }
+      return head + '<li><a class="race' + (isPast(r) ? ' done' : '') + '" href="#race/' + encodeURIComponent(r.id) + '">' +
       '<span class="bar lvl-' + levelKey(r.level) + '"></span>' +
       '<span class="race-body"><span class="race-when">' + esc(when(r, fmtShort)) + (isPast(r) ? ' · finished' : '') + '</span>' +
       '<span class="race-name">' + esc(r.name) + '</span>' +
       '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span></span>' +
-      tag(r) + '</a></li>').join('');
+      tag(r) + '</a></li>';
+    }).join('');
   }
 
   // ---- Add to calendar (.ics) ----
@@ -190,9 +212,10 @@
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('cal-start').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
   });
-  $('prev').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() - 1, 1); pickedDay = null; drawMonth(); });
-  $('next').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() + 1, 1); pickedDay = null; drawMonth(); });
-  $('today').addEventListener('click', () => { shown = startOfMonth(new Date()); pickedDay = null; drawMonth(); });
+  // Changing month switches the list to that one month. "Show next 12 months" switches back.
+  $('prev').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() - 1, 1); pickedDay = null; yearView = false; drawMonth(); });
+  $('next').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() + 1, 1); pickedDay = null; yearView = false; drawMonth(); });
+  $('today').addEventListener('click', () => { shown = startOfMonth(new Date()); pickedDay = null; yearView = true; drawMonth(); });
   window.addEventListener('hashchange', route);
 
   fetch('races.csv')

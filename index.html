@@ -34,6 +34,7 @@
       </div>
       <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav"><span class="menu-icon" aria-hidden="true"></span>Menu</button>
       <nav id="site-nav" aria-label="Main">
+        <a class="nav-home" href="index.html" aria-current="page">Home</a>
         <a href="calendar.html">Calendar</a>
         <a href="new-to-racing.html">New to racing?</a>
         <a href="gear.html">Gear</a>
@@ -58,7 +59,7 @@
       <section class="home-block">
         <div class="home-head">
           <h2>Coming up</h2>
-          <a href="calendar.html">Full calendar ›</a>
+          <a class="btn btn-small" href="calendar.html">Full calendar</a>
         </div>
         <ul class="race-list" id="next-races"><li class="empty">Loading races…</li></ul>
       </section>
@@ -66,16 +67,16 @@
       <section class="home-block">
         <h2>Start here</h2>
         <div class="tiles">
-          <a class="tile" href="calendar.html"><span class="tile-k">01</span><strong>Race calendar</strong><span>Every SA race by month, coloured by level.</span></a>
-          <a class="tile" href="new-to-racing.html"><span class="tile-k">02</span><strong>New to racing?</strong><span>Licences, race types and what to bring.</span></a>
-          <a class="tile" href="gear.html"><span class="tile-k">03</span><strong>Gear guide</strong><span>Helmets, pads, pedals and more, by price and skill.</span></a>
+          <a class="tile" href="calendar.html"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h2M14 14h2M8 17h2"/></svg></span><span class="tile-text"><strong>Race calendar</strong><span>Every SA race, coloured by level.</span></span><span class="tile-go" aria-hidden="true">›</span></a>
+          <a class="tile" href="new-to-racing.html"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/></svg></span><span class="tile-text"><strong>New to racing?</strong><span>Licences, race types and what to bring.</span></span><span class="tile-go" aria-hidden="true">›</span></a>
+          <a class="tile" href="gear.html"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a9 9 0 0 1 18 0v1H3z"/><path d="M12 6v4M7.5 8l2 3M16.5 8l-2 3"/><path d="M21 13l2-1"/></svg></span><span class="tile-text"><strong>Gear guide</strong><span>Helmets, pads, pedals and more.</span></span><span class="tile-go" aria-hidden="true">›</span></a>
+          <a class="tile" href="links.html"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span><span class="tile-text"><strong>Clubs and links</strong><span>SA clubs, entry sites and trail maps.</span></span><span class="tile-go" aria-hidden="true">›</span></a>
         </div>
       </section>
 
       <section class="home-block about-block" id="about">
         <h2>About</h2>
         <p>Mountain Biking SA was started by a young local rider and their family after their first race, when finding race info online meant digging through a dozen different websites. The aim is simple: put everything SA riders need in one easy place.</p>
-        <p class="muted small">This is a community project. It isn't run by or affiliated with AusCycling or any club. Dates can change, so always check the official race page before you go.</p>
       </section>
     </div>
   </main>
@@ -87,16 +88,6 @@
         <p>A free, community-run guide to mountain bike racing in South Australia, started by a young local rider and their family.</p>
       </div>
       <div>
-        <h2>Explore</h2>
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="calendar.html">Calendar</a></li>
-          <li><a href="new-to-racing.html">New to racing?</a></li>
-          <li><a href="gear.html">Gear guide</a></li>
-          <li><a href="links.html">Links</a></li>
-        </ul>
-      </div>
-      <div>
         <h2>Contact</h2>
         <p>Got a race to add, or spotted a wrong date? We'd love to hear from you.</p>
         <p class="contact-soon">Contact email coming soon</p>
@@ -106,6 +97,9 @@
         <p>Mountain Biking SA isn't run by or affiliated with AusCycling or any club. Race details come from organisers' public pages and can change, so always check the official page before you go. Gear picks are researched, not tested, and there are no paid or affiliate links.</p>
       </div>
     </div>
+    <nav class="wrap foot-links" aria-label="Footer">
+      <a href="index.html">Home</a><span aria-hidden="true">·</span><a href="calendar.html">Calendar</a><span aria-hidden="true">·</span><a href="new-to-racing.html">New to racing?</a><span class="fl-cut" aria-hidden="true">·</span><a href="gear.html">Gear guide</a><span aria-hidden="true">·</span><a href="links.html">Links</a>
+    </nav>
     <div class="wrap foot-bottom">© 2026 Mountain Biking SA · Made in South Australia</div>
   </footer>
   <script src="home.js"></script>
