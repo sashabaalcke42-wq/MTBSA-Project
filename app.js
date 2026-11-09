@@ -184,6 +184,12 @@
   }
 
   // ---- Start ----
+  // "Find a race" glides down to the calendar instead of jumping.
+  $('find').addEventListener('click', e => {
+    e.preventDefault();
+    const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    $('cal-start').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });
+  });
   $('prev').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() - 1, 1); pickedDay = null; drawMonth(); });
   $('next').addEventListener('click', () => { shown = new Date(shown.getFullYear(), shown.getMonth() + 1, 1); pickedDay = null; drawMonth(); });
   $('today').addEventListener('click', () => { shown = startOfMonth(new Date()); pickedDay = null; drawMonth(); });

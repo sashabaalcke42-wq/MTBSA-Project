@@ -187,3 +187,4 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .content h2 { font-size: 1.6rem; text-transform: uppercase; font-weight: 800; }
 .detail-when { color: var(--brand); }
 .detail { padding-top: 22px; }
+#cal-start { scroll-margin-top: 12px; }
