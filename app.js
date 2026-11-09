@@ -187,7 +187,7 @@
       '<p class="detail-summary">' + esc(r.summary) + '</p>' +
       '<div class="actions">' +
         '<a class="btn btn-main" href="' + esc(safeUrl(r.entry_url)) + '" target="_blank" rel="noopener">' + (past ? 'Results and info' : 'Enter on the official page') + ' ↗</a>' +
-        (past ? '' : '<button class="btn" id="add-cal" type="button">Add to my calendar</button>') +
+        (past ? '' : '<button class="btn" id="add-cal" type="button">Add to my calendar</button><a class="btn" href="race-day-checklist.html">Race-day checklist</a>') +
       '</div>' +
       '<dl class="facts">' +
         row('Where', esc(r.venue === 'See entry page' ? r.region + ' (venue on the entry page)' : r.venue + ', ' + r.region)) +
