@@ -57,18 +57,23 @@
     <div class="wrap content">
 
     <div class="download-box">
-      <div>
+      <span class="db-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M13 11v6M10 14l3 3 3-3"/></svg></span>
+      <div class="db-text">
         <strong>Print it or save it to your phone</strong>
         <span>One page, ready to stick on the fridge the night before.</span>
       </div>
       <a class="btn btn-main btn-big" href="race-day-checklist.pdf" download>Download checklist (PDF)</a>
     </div>
 
-    <p class="no-print">Tick things off on your phone as you pack. The ticks only stay on this screen.</p>
+    <div class="cl-progress no-print">
+      <div class="cl-progress-top"><strong><span id="cl-done">0</span> of 27 packed</strong><button type="button" class="link-btn" id="cl-reset">Clear all ticks</button></div>
+      <div class="cl-bar" aria-hidden="true"><span id="cl-fill"></span></div>
+      <p class="cl-note">Tap items as you pack. Your ticks are saved on this phone or computer only.</p>
+    </div>
 
     <div class="cl-grid">
       <section class="cl-group">
-        <h2>The night before</h2>
+        <div class="cl-head"><span class="cl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg></span><h2>The night before</h2><span class="cl-count" aria-hidden="true">0/6</span></div>
         <ul class="cl">
           <li><label><input type="checkbox"><span>Check tyre pressure and look for cuts or thorns</span></label></li>
           <li><label><input type="checkbox"><span>Squeeze both brakes, they should feel firm</span></label></li>
@@ -79,7 +84,7 @@
         </ul>
       </section>
       <section class="cl-group">
-        <h2>Rider kit</h2>
+        <div class="cl-head"><span class="cl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15a9 9 0 0 1 18 0v1H3z"/><path d="M12 6v4M7.5 8l2 3M16.5 8l-2 3"/></svg></span><h2>Rider kit</h2><span class="cl-count" aria-hidden="true">0/6</span></div>
         <ul class="cl">
           <li><label><input type="checkbox"><span>Helmet (full-face for downhill)</span></label></li>
           <li><label><input type="checkbox"><span>Gloves</span></label></li>
@@ -90,7 +95,7 @@
         </ul>
       </section>
       <section class="cl-group">
-        <h2>Bike and spares</h2>
+        <div class="cl-head"><span class="cl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="16" r="4"/><circle cx="18" cy="16" r="4"/><path d="M6 16l4-7h6l2 7M10 9l3 7h3M12 6h-3"/></svg></span><h2>Bike and spares</h2><span class="cl-count" aria-hidden="true">0/5</span></div>
         <ul class="cl">
           <li><label><input type="checkbox"><span>Bike (cleaned and checked)</span></label></li>
           <li><label><input type="checkbox"><span>Pump and spare tube or plug kit</span></label></li>
@@ -100,7 +105,7 @@
         </ul>
       </section>
       <section class="cl-group">
-        <h2>Food and water</h2>
+        <div class="cl-head"><span class="cl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v3l2 2v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V8l2-2z"/><path d="M7 12h10"/></svg></span><h2>Food and water</h2><span class="cl-count" aria-hidden="true">0/4</span></div>
         <ul class="cl">
           <li><label><input type="checkbox"><span>Water bottles or hydration pack (more than you think)</span></label></li>
           <li><label><input type="checkbox"><span>Snacks for before and between races</span></label></li>
@@ -108,8 +113,8 @@
           <li><label><input type="checkbox"><span>Electrolytes for hot days</span></label></li>
         </ul>
       </section>
-      <section class="cl-group">
-        <h2>For the parents</h2>
+      <section class="cl-group cl-wide">
+        <div class="cl-head"><span class="cl-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21v-6M18 21v-6M4 15h16M5 15l2-8h10l2 8"/><path d="M12 3v4"/></svg></span><h2>For the parents</h2><span class="cl-count" aria-hidden="true">0/6</span></div>
         <ul class="cl">
           <li><label><input type="checkbox"><span>Camp chair and shade</span></label></li>
           <li><label><input type="checkbox"><span>Sunscreen, hat and a warm layer</span></label></li>
@@ -146,6 +151,7 @@
     </nav>
     <div class="wrap foot-bottom">© 2026 Mountain Biking SA · Made in South Australia</div>
   </footer>
+  <script src="checklist.js"></script>
   <script src="nav.js"></script>
   <script data-goatcounter="https://mtbsa.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
 </body>

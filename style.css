@@ -337,16 +337,42 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .download-box span { color: var(--muted); }
 .btn-big { font-size: 1.3rem; padding: 14px 24px; }
 .btn-big::before { content: "⬇ "; }
-.cl-grid { columns: 2; column-gap: 16px; }
-.cl-group { break-inside: avoid; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 4px 16px 8px; margin: 0 0 16px; }
-.content .cl-group h2 { margin: 12px 0 4px; }
-.cl li:last-child label { border-bottom: 0; }
-.cl { list-style: none; padding: 0 !important; margin: 0; }
+.cl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.cl-group { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; box-shadow: 0 6px 16px -12px rgba(0,0,0,0.35); }
+.cl-wide { grid-column: 1 / -1; }
+.cl-wide .cl { columns: 2; column-gap: 24px; }
+.cl-wide .cl li { break-inside: avoid; }
+.cl-head { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--night); color: #fff; }
+.cl-icon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--brand); color: #fff; }
+.cl-icon svg { width: 19px; height: 19px; }
+.content .cl-head h2 { margin: 0; font-size: 1.3rem; color: #fff; text-transform: uppercase; }
+.cl-count { margin-left: auto; font-family: var(--display); font-weight: 700; font-size: 1rem; color: rgba(255,255,255,0.7); }
+.cl-group.done .cl-count { color: var(--brand); }
+.cl-group.done .cl-count::after { content: " ✓"; }
+.cl { list-style: none; padding: 4px 16px 6px !important; margin: 0; }
 .content .cl li { margin: 0; }
-.cl label { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
-.cl input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--brand); flex: none; }
+.cl label { display: flex; gap: 12px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.cl li:last-child label, .cl-wide .cl li label { border-bottom: 1px solid var(--line); }
+.cl > li:last-child label { border-bottom: 0; }
+.cl input { appearance: none; -webkit-appearance: none; flex: none; width: 22px; height: 22px; margin: 0; border: 2px solid var(--muted); border-radius: 6px; background: var(--bg); display: grid; place-items: center; cursor: pointer; transition: background .12s, border-color .12s; }
+.cl input:hover { border-color: var(--brand); }
+.cl input:checked { background: var(--brand); border-color: var(--brand); }
+.cl input:checked::after { content: ""; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: translateY(-1px) rotate(45deg); }
+.cl input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .cl input:checked + span { text-decoration: line-through; color: var(--muted); }
-@media (max-width: 640px) { .cl-grid { columns: 1; } .download-box a { width: 100%; text-align: center; } }
+.cl-progress { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin: 0 0 18px; }
+.cl-progress-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.cl-progress-top strong { font-family: var(--display); font-size: 1.3rem; text-transform: uppercase; }
+.cl-bar { height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; margin: 10px 0 8px; }
+.cl-bar span { display: block; height: 100%; width: 0; background: var(--brand); border-radius: 999px; transition: width .25s; }
+.cl-progress.all-done .cl-bar span { background: #2e9e5b; }
+.cl-note { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.download-box { flex-wrap: nowrap; }
+.db-icon { flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 12px; background: var(--brand); color: #fff; }
+.db-icon svg { width: 28px; height: 28px; }
+.db-text { flex: 1; min-width: 0; }
+@media (max-width: 640px) { .download-box { flex-wrap: wrap; } .db-icon { display: none; } .cl-wide .cl { columns: 1; } }
+@media (max-width: 640px) { .cl-grid { grid-template-columns: 1fr; } .download-box a { width: 100%; text-align: center; } }
 
 /* Checklist banner on other pages */
 .checklist-banner { display: flex; align-items: center; gap: 14px; background: var(--card); color: var(--text); border: 2px solid var(--brand); border-radius: var(--radius); padding: 14px 18px; margin: 14px 0 18px; text-decoration: none; transition: transform .12s; }
@@ -367,8 +393,15 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
   .hero p.sub { color: #333; margin-bottom: 0; }
   main { padding: 0; }
   .content { max-width: none; }
-  .cl-grid { columns: 2; column-gap: 28px; }
-  .cl-group { border: 0; padding: 0; margin: 0 0 6px; background: none; }
+  .cl-grid { display: block; columns: 2; column-gap: 28px; }
+  .cl-group { break-inside: avoid; border: 0; margin: 0 0 6px; background: none; box-shadow: none; }
+  .cl-head { background: none; color: #000; padding: 6px 0 0; }
+  .content .cl-head h2 { color: #000; }
+  .cl-icon, .cl-count { display: none; }
+  .cl, .cl-wide .cl { padding: 0 !important; columns: 1; }
+  .cl input:checked { background: none; }
+  .cl input:checked::after { display: none; }
+  .cl input:checked + span { text-decoration: none; color: #000; }
   .content .cl-group h2 { font-size: 1.1rem; margin: 10px 0 2px; }
   .cl label { padding: 3px 0; font-size: 0.9rem; border-color: #ccc; }
   .cl input { appearance: none; -webkit-appearance: none; border: 1.5px solid #000; border-radius: 3px; width: 14px; height: 14px; }
