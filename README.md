@@ -12,6 +12,8 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `index.html` + `app.js` | The month calendar and race pages, built from `races.csv`. |
 | `new-to-racing.html` | Beginner guide: race types, licences, entering, what to bring. |
 | `links.html` | Official SA sites, clubs and trail links. |
+| `gear.html` + `gear.js` + `gear.csv` | Gear guide with filters for type, skill level, price and brand. Add gear as rows in `gear.csv`. |
+| `icons/`, `favicon.svg`, `site.webmanifest` | The app icon for browser tabs and phone home screens. |
 | `style.css` | How everything looks (works in light and dark mode, and on phones). |
 
 ## Adding a race
@@ -28,6 +30,10 @@ Add a row to `races.csv`. The columns are:
 - `entry_url`: the official entry page
 
 Races show on a month calendar, coloured by level. Past races stay in the file and show as finished, so people can see how the season usually runs.
+
+## Adding gear
+
+Add a row to `gear.csv`: `name`, `brand`, `category`, `skill` (`Beginner`, `Intermediate` or `Racer`), `price_aud` (and `rrp_aud` if it's on sale), `shop`, `shop_url`, `checked` (date you checked the price), and three short plain-English notes: `what_it_is`, `good_for`, `watch_out`. If you ever use affiliate links, say so clearly on the page.
 
 ## Running it
 
