@@ -42,6 +42,10 @@ Add a row to `gear.csv`: `name`, `brand`, `category`, `skill` (`Beginner`, `Inte
 
 The share-preview tags (`og:url` and `og:image` in each page's `<head>`) use the full GitHub Pages address. Swap that address for the new domain so link previews keep working.
 
+## Visitor stats
+
+Visits are counted anonymously by GoatCounter (no cookies). Only the account owner can see them, at https://mtbsa.goatcounter.com/ after logging in. The counting script is the `gc.zgo.at/count.js` line at the bottom of each page.
+
 ## Running it
 
 It's a plain static site with no build step. GitHub Pages hosts it for free: **Settings → Pages → Deploy from branch → `main` / root**.

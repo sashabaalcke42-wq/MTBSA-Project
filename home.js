@@ -14,22 +14,25 @@
       else f += c;
     }
     row.push(f); if (row.some(v => v.trim())) rows.push(row);
-    const head = rows.shift().map(h => h.trim());
+    const head = rows.shift().map(h => h.replace(/^\uFEFF/, '').trim());
     return rows.map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || '').trim()])));
   }
   const d = new Date();
   const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   const fmt = new Intl.DateTimeFormat('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  // Excel likes to save dates as 15/11/2026. Turn those back into 2026-11-15.
+  const normDate = s => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || ''); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : (s || ''); };
   const toDate = s => { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd); };
-  fetch('races.csv').then(r => r.text()).then(text => {
-    const next = parseCSV(text).filter(r => r.id && (r.end_date || r.date) >= today)
+  fetch('races.csv').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(text => {
+    const next = parseCSV(text).map(r => Object.assign(r, { date: normDate(r.date), end_date: normDate(r.end_date) }))
+      .filter(r => r.id && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && (r.end_date || r.date) >= today)
       .sort((a, b) => a.date.localeCompare(b.date)).slice(0, 3);
     if (!next.length) { list.innerHTML = '<li class="empty">No upcoming races listed yet. New dates get added as clubs announce them.</li>'; return; }
     list.innerHTML = next.map(r => {
-      const lvl = LEVELS.includes(r.level.toLowerCase()) ? r.level.toLowerCase() : 'club';
+      const lvl = LEVELS.includes((r.level || '').toLowerCase()) ? r.level.toLowerCase() : 'club';
       return '<li><a class="race" href="calendar.html#race/' + encodeURIComponent(r.id) + '">' +
         '<span class="bar lvl-' + lvl + '"></span>' +
-        '<span class="race-body"><span class="race-when">' + esc(fmt.format(toDate(r.date))) + '</span>' +
+        '<span class="race-body"><span class="race-when">' + esc(fmt.format(toDate(r.date)) + (r.end_date && r.end_date !== r.date ? ' to ' + fmt.format(toDate(r.end_date)) : '')) + '</span>' +
         '<span class="race-name">' + esc(r.name) + '</span>' +
         '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span></span>' +
         '<span class="tag lvl-' + lvl + '">' + esc(r.level) + '</span></a></li>';
