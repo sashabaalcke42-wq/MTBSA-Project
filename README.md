@@ -9,7 +9,10 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | File | What it is |
 | --- | --- |
 | `races.csv` | **All the races.** Open it in Excel or Google Sheets to add or change one. |
-| `index.html` + `app.js` | The month calendar and race pages, built from `races.csv`. |
+| `index.html` + `home.js` | Home page: hero, the next three races, quick links and About. |
+| `calendar.html` + `app.js` | The month calendar and race pages, built from `races.csv`. |
+| `nav.js` | Opens the menu on phones. The header and footer are the same on every page, so change them on all pages together. |
+| `og-image.png` | The picture that shows when the site is shared in Facebook, Messenger or a group chat. |
 | `new-to-racing.html` | Beginner guide: race types, licences, entering, what to bring. |
 | `links.html` | Official SA sites, clubs and trail links. |
 | `gear.html` + `gear.js` + `gear.csv` | Gear guide with filters for type, skill level, price and brand. Add gear as rows in `gear.csv`. |
@@ -34,6 +37,10 @@ Races show on a month calendar, coloured by level. Past races stay in the file a
 ## Adding gear
 
 Add a row to `gear.csv`: `name`, `brand`, `category`, `skill` (`Beginner`, `Intermediate` or `Racer`), `price_aud` (and `rrp_aud` if it's on sale), `shop`, `shop_url`, `checked` (date you checked the price), and three short plain-English notes: `what_it_is`, `good_for`, `watch_out`. If you ever use affiliate links, say so clearly on the page.
+
+## When the domain is bought
+
+The share-preview tags (`og:url` and `og:image` in each page's `<head>`) use the full GitHub Pages address. Swap that address for the new domain so link previews keep working.
 
 ## Running it
 
