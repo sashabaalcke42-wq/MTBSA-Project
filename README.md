@@ -36,7 +36,19 @@ Races show on a month calendar, coloured by level. Past races stay in the file a
 
 ## Adding gear
 
-Add a row to `gear.csv`: `name`, `brand`, `category`, `skill` (`Beginner`, `Intermediate` or `Racer`), `price_aud` (and `rrp_aud` if it's on sale), `shop`, `shop_url`, `checked` (date you checked the price), and three short plain-English notes: `what_it_is`, `good_for`, `watch_out`. If you ever use affiliate links, say so clearly on the page.
+Add a row to `gear.csv`. The columns are:
+
+- `id`: a short unique name with no spaces
+- `name`, `brand`
+- `section`: `Rider gear`, `Bike parts` or `Bikes` (sets which tab it shows under)
+- `category`: e.g. Helmets, Tyres, Brakes, Bikes (sets the drawing and the Type filter)
+- `skill`: `Beginner`, `Intermediate` or `Racer`
+- `price_aud` (and `rrp_aud` if it's on sale), `shop`, `shop_url`, `checked` (date you checked the price)
+- `what_it_is`, `good_for`, `watch_out`: short plain-English notes
+- `our_take`: a one or two sentence verdict, shown at the top of the pop-up
+- `tested`: put `yes` once you've actually ridden or used it. It adds a "Tested by us" badge.
+
+If you ever use affiliate links, say so clearly on the page.
 
 ## When the domain is bought
 
