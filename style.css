@@ -316,16 +316,18 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 @media (max-width: 480px) { .g-tab { font-size: 1rem; padding: 7px 12px; } }
 
 /* Where to ride */
-.ride-list { list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 12px; }
-.content .ride-list li { margin: 0; }
-.ride { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
-.ride-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
-.ride h3 { font-family: var(--display); font-size: 1.45rem; text-transform: uppercase; margin: 0; line-height: 1.1; }
+.ride-list { list-style: none; padding: 0 !important; margin: 0 0 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.content .ride-list li { margin: 0; display: flex; }
+.ride { flex: 1; display: flex; flex-direction: column; gap: 8px; background: var(--card); border: 1px solid var(--line); border-top: 4px solid var(--brand); border-radius: var(--radius); padding: 14px 16px 12px; color: var(--text); text-decoration: none; box-shadow: 0 6px 16px -10px rgba(0,0,0,0.35); transition: transform .12s, box-shadow .12s, border-color .12s; }
+.ride:hover, .ride:focus-visible { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(0,0,0,0.45); border-color: var(--brand); }
+.ride-head { display: flex; flex-direction: column; gap: 2px; }
+.ride-name { font-family: var(--display); font-weight: 800; font-size: 1.45rem; text-transform: uppercase; line-height: 1.1; }
 .ride-where { color: var(--muted); font-size: 0.92rem; }
-.ride-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.ride-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .ride-tag { font-size: 0.8rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); }
-.ride p:not(.ride-tags) { margin: 0 0 8px; }
-.ride-map { font-weight: 700; }
+.ride-text { flex: 1; }
+.ride-go { align-self: flex-start; margin-top: 4px; font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand-ink); background: var(--brand); border-radius: 8px; padding: 6px 12px; }
+@media (max-width: 640px) { .ride-list { grid-template-columns: 1fr; } }
 .callout.warn { border-left-color: #d9a400; }
 
 /* Race-day checklist */
