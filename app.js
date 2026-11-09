@@ -71,15 +71,15 @@
   function drawLevels() {
     const box = $('levels');
     box.classList.toggle('filtering', picked.size > 0);
-    box.innerHTML = LEVELS.map(l =>
+    box.innerHTML = '<button type="button" class="level-btn level-all" id="show-all" aria-pressed="' + !picked.size + '">All races</button>' +
+      LEVELS.map(l =>
       '<button type="button" class="level-btn lvl-' + l.key + '" data-key="' + l.key + '" aria-pressed="' + picked.has(l.key) + '" title="' + esc(l.help) + '">' +
-      '<span class="dot"></span>' + l.name + '</button>').join('') +
-      (picked.size ? '<button type="button" class="link-btn" id="show-all">Show all</button>' : '');
-    box.querySelectorAll('.level-btn').forEach(b => b.addEventListener('click', () => {
+      '<span class="dot"></span>' + l.name + '</button>').join('');
+    box.querySelectorAll('.level-btn:not(.level-all)').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.key; picked.has(k) ? picked.delete(k) : picked.add(k);
       drawLevels(); drawMonth();
     }));
-    const all = $('show-all'); if (all) all.addEventListener('click', () => { picked.clear(); drawLevels(); drawMonth(); });
+    $('show-all').addEventListener('click', () => { picked.clear(); drawLevels(); drawMonth(); });
   }
 
   // ---- Month grid ----

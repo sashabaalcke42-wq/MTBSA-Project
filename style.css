@@ -99,7 +99,8 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .level-btn { transition: opacity .12s, box-shadow .12s; }
 .levels.filtering .level-btn[aria-pressed="true"] { border-color: var(--lvl); box-shadow: 0 0 0 2px var(--lvl); }
 .levels.filtering .level-btn[aria-pressed="false"] { opacity: 0.45; text-decoration: line-through; }
-.levels .link-btn { align-self: center; margin-left: 4px; }
+.level-all { --lvl: var(--brand); }
+.level-all[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 0 0 2px var(--text); }
 
 /* Month bar */
 .month-bar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 10px; }
