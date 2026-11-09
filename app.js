@@ -21,6 +21,7 @@
   let shown = startOfMonth(new Date()); // month on screen
   let pickedDay = null;              // 'YYYY-MM-DD' when a day is tapped
   let yearView = true;               // list shows the next 12 months until someone changes month
+  let cameFromCalendar = false;      // so "Back to calendar" never jumps to a different page
 
   // ---- CSV (handles quoted fields with commas) ----
   function parseCSV(text) {
@@ -36,11 +37,13 @@
       } else f += c;
     }
     row.push(f); if (row.some(v => v.trim())) rows.push(row);
-    const head = rows.shift().map(h => h.trim());
+    const head = rows.shift().map(h => h.replace(/^\uFEFF/, '').trim());
     return rows.map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || '').trim()])));
   }
 
   // ---- Dates ----
+  // Excel likes to save dates as 15/11/2026. Turn those back into 2026-11-15.
+  const normDate = s => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || ''); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : (s || ''); };
   function toDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
   function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
   function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
@@ -68,15 +71,15 @@
   function drawLevels() {
     const box = $('levels');
     box.classList.toggle('filtering', picked.size > 0);
-    box.innerHTML = LEVELS.map(l =>
+    box.innerHTML = '<button type="button" class="level-btn level-all" id="show-all" aria-pressed="' + !picked.size + '">All races</button>' +
+      LEVELS.map(l =>
       '<button type="button" class="level-btn lvl-' + l.key + '" data-key="' + l.key + '" aria-pressed="' + picked.has(l.key) + '" title="' + esc(l.help) + '">' +
-      '<span class="dot"></span>' + l.name + '</button>').join('') +
-      (picked.size ? '<button type="button" class="link-btn" id="show-all">Show all</button>' : '');
-    box.querySelectorAll('.level-btn').forEach(b => b.addEventListener('click', () => {
+      '<span class="dot"></span>' + l.name + '</button>').join('');
+    box.querySelectorAll('.level-btn:not(.level-all)').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.key; picked.has(k) ? picked.delete(k) : picked.add(k);
       drawLevels(); drawMonth();
     }));
-    const all = $('show-all'); if (all) all.addEventListener('click', () => { picked.clear(); drawLevels(); drawMonth(); });
+    $('show-all').addEventListener('click', () => { picked.clear(); drawLevels(); drawMonth(); });
   }
 
   // ---- Month grid ----
@@ -195,14 +198,18 @@
         row('Run by', '<a href="' + esc(safeUrl(r.organiser_url)) + '" target="_blank" rel="noopener">' + esc(r.organiser) + '</a>') +
       '</dl>' +
       '<p class="muted small">Details can change, so check the official page before you go.</p>';
-    $('back').addEventListener('click', e => { e.preventDefault(); history.length > 1 ? history.back() : (location.hash = ''); });
+    $('back').addEventListener('click', e => { e.preventDefault(); cameFromCalendar ? history.back() : (location.hash = ''); });
     const b = $('add-cal'); if (b) b.addEventListener('click', () => downloadICS(r));
   }
 
   function route() {
     const m = location.hash.match(/^#race\/(.+)$/);
-    if (m) { drawDetail(decodeURIComponent(m[1])); calView.hidden = true; detailView.hidden = false; window.scrollTo(0, 0); }
-    else { detailView.hidden = true; calView.hidden = false; }
+    if (m) {
+      drawDetail(decodeURIComponent(m[1])); calView.hidden = true; detailView.hidden = false; window.scrollTo(0, 0);
+      // Visitor stats: count each race page as its own page (does nothing if the stats script is blocked).
+      if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: '/race/' + m[1], title: document.title });
+    }
+    else { detailView.hidden = true; calView.hidden = false; cameFromCalendar = true; }
   }
 
   // ---- Start ----
@@ -221,7 +228,8 @@
   fetch('races.csv')
     .then(res => { if (!res.ok) throw new Error(res.status); return res.text(); })
     .then(text => {
-      races = parseCSV(text).filter(r => r.id && r.date).sort((a, b) => a.date.localeCompare(b.date));
+      races = parseCSV(text).map(r => Object.assign(r, { date: normDate(r.date), end_date: normDate(r.end_date) }))
+        .filter(r => r.id && /^\d{4}-\d{2}-\d{2}$/.test(r.date)).sort((a, b) => a.date.localeCompare(b.date));
       drawLevels(); drawMonth(); route();
     })
     .catch(() => { list.innerHTML = '<li class="empty">Sorry, the races couldn\'t be loaded. Please try again later.</li>'; });

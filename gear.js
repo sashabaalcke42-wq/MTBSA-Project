@@ -30,14 +30,14 @@
       } else f += c;
     }
     row.push(f); if (row.some(v => v.trim())) rows.push(row);
-    const head = rows.shift().map(h => h.trim());
+    const head = rows.shift().map(h => h.replace(/^\uFEFF/, '').trim());
     return rows.map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || '').trim()])));
   }
 
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const safeUrl = u => /^https?:\/\//i.test(u) ? u : '#';
   const money = n => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
-  const fmtDate = s => { const [y, m, d] = s.split('-').map(Number); return new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(y, m - 1, d)); };
+  const fmtDate = s => { const dm = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s); const [y, m, d] = dm ? [+dm[3], +dm[2], +dm[1]] : s.split('-').map(Number); if (!y || !m || !d) return ''; return new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(y, m - 1, d)); };
 
   function fill(select, values) {
     values.forEach(v => { const o = document.createElement('option'); o.value = v; o.textContent = v; select.appendChild(o); });
@@ -99,7 +99,7 @@
         '<p>' + esc(g.what_it_is) + '</p>' +
         '<dl class="gear-take"><dt>Good for</dt><dd>' + esc(g.good_for) + '</dd><dt>Watch out</dt><dd>' + esc(g.watch_out) + '</dd></dl>' +
         '<a class="btn btn-main" href="' + esc(safeUrl(g.shop_url)) + '" target="_blank" rel="noopener">See it at ' + esc(g.shop) + ' ↗</a>' +
-        '<p class="gear-checked">Price checked at ' + esc(g.shop) + ' on ' + esc(fmtDate(g.checked)) + '. Researched, not tested by us.</p>' +
+        '<p class="gear-checked">Price checked at ' + esc(g.shop) + (fmtDate(g.checked) ? ' on ' + esc(fmtDate(g.checked)) : '') + '. Researched, not tested by us.</p>' +
       '</div>';
     detail.querySelector('.gd-close').addEventListener('click', () => dialog.close());
     if (dialog.showModal) dialog.showModal(); else dialog.setAttribute('open', '');
@@ -109,7 +109,7 @@
   fetch('gear.csv')
     .then(res => { if (!res.ok) throw new Error(res.status); return res.text(); })
     .then(text => {
-      gear = parseCSV(text).filter(g => g.id).map(g => Object.assign(g, { price: Number(g.price_aud), rrp: Number(g.rrp_aud) || 0 }));
+      gear = parseCSV(text).filter(g => g.id && g.price_aud !== '' && !isNaN(Number(g.price_aud))).map(g => Object.assign(g, { price: Number(g.price_aud), rrp: Number(g.rrp_aud) || 0 }));
       fill(fCat, [...new Set(gear.map(g => g.category))].sort());
       fill(fSkill, SKILLS.filter(s => gear.some(g => g.skill === s)));
       fill(fBrand, [...new Set(gear.map(g => g.brand))].sort());

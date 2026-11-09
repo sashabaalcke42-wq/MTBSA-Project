@@ -7,4 +7,7 @@
     const open = header.classList.toggle('nav-open');
     btn.setAttribute('aria-expanded', open);
   });
+  const close = () => { header.classList.remove('nav-open'); btn.setAttribute('aria-expanded', false); };
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+  document.addEventListener('click', e => { if (!header.contains(e.target)) close(); });
 })();
