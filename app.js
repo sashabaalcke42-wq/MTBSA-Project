@@ -185,7 +185,7 @@
 
   // ---- Start ----
   // "Find a race" glides down to the calendar instead of jumping.
-  $('find').addEventListener('click', e => {
+  if ($('find')) $('find').addEventListener('click', e => {
     e.preventDefault();
     const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     $('cal-start').scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'start' });

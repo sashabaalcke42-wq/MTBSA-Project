@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Useful links · Mountain Biking SA</title>
   <meta name="description" content="The official SA mountain bike websites, clubs and trail guides in one list.">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Mountain Biking SA">
+  <meta property="og:title" content="Useful links · Mountain Biking SA">
+  <meta property="og:description" content="SA mountain bike clubs, race entry sites and trail guides in one list.">
+  <meta property="og:url" content="https://sashabaalcke42-wq.github.io/MTBSA-Project/links.html">
+  <meta property="og:image" content="https://sashabaalcke42-wq.github.io/MTBSA-Project/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Mountain Biking SA: Every SA race. One place.">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -17,10 +27,14 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand" href="index.html"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#d2602a"/><path d="M4 30 L15 14 L21 22 L26 16 L36 30 Z" fill="#121814"/><path d="M15 14 L18.5 19 L16.5 18 L14 20.5 L12.3 18 Z" fill="#fff"/><path d="M8 33 Q16 27 22 31 T34 30" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.5 3" stroke-linecap="round"/></svg><span>Mountain Biking <b>SA</b></span></a>
-      <nav>
-        <a href="index.html">Calendar</a>
+    <div class="wrap bar">
+      <div class="bar-left">
+        <a class="brand" href="index.html" aria-label="Mountain Biking SA home"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#d2602a"/><path d="M4 30 L15 14 L21 22 L26 16 L36 30 Z" fill="#121814"/><path d="M15 14 L18.5 19 L16.5 18 L14 20.5 L12.3 18 Z" fill="#fff"/><path d="M8 33 Q16 27 22 31 T34 30" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.5 3" stroke-linecap="round"/></svg><span class="brand-long">Mountain Biking <b>SA</b></span><span class="brand-short">MTB <b>SA</b></span></a>
+        <a class="home-link" href="index.html">Home</a>
+      </div>
+      <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav"><span class="menu-icon" aria-hidden="true"></span>Menu</button>
+      <nav id="site-nav" aria-label="Main">
+        <a href="calendar.html">Calendar</a>
         <a href="new-to-racing.html">New to racing?</a>
         <a href="gear.html">Gear</a>
         <a href="links.html" aria-current="page">Links</a>
@@ -73,9 +87,33 @@
   </main>
 
   <footer class="site-footer">
-    <div class="wrap">
-      <p>Mountain Biking SA is a community project. It isn't run by or affiliated with AusCycling or any club.</p>
+    <div class="wrap foot-grid">
+      <div class="foot-about">
+        <a class="brand" href="index.html"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#d2602a"/><path d="M4 30 L15 14 L21 22 L26 16 L36 30 Z" fill="#121814"/><path d="M15 14 L18.5 19 L16.5 18 L14 20.5 L12.3 18 Z" fill="#fff"/><path d="M8 33 Q16 27 22 31 T34 30" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.5 3" stroke-linecap="round"/></svg><span>Mountain Biking <b>SA</b></span></a>
+        <p>A free, community-run guide to mountain bike racing in South Australia, started by a young local rider and their family.</p>
+      </div>
+      <div>
+        <h2>Explore</h2>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="calendar.html">Calendar</a></li>
+          <li><a href="new-to-racing.html">New to racing?</a></li>
+          <li><a href="gear.html">Gear guide</a></li>
+          <li><a href="links.html">Links</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Contact</h2>
+        <p>Got a race to add, or spotted a wrong date? We'd love to hear from you.</p>
+        <p class="contact-soon">Contact email coming soon</p>
+      </div>
+      <div class="foot-legal">
+        <h2>Disclaimer</h2>
+        <p>Mountain Biking SA isn't run by or affiliated with AusCycling or any club. Race details come from organisers' public pages and can change, so always check the official page before you go. Gear picks are researched, not tested, and there are no paid or affiliate links.</p>
+      </div>
     </div>
+    <div class="wrap foot-bottom">© 2026 Mountain Biking SA · Made in South Australia</div>
   </footer>
+  <script src="nav.js"></script>
 </body>
 </html>
