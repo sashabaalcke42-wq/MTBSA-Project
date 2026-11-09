@@ -55,6 +55,7 @@ button { font: inherit; color: inherit; }
 .brand svg { width: 34px; height: 34px; flex: none; }
 .brand b { color: var(--brand); font-weight: 800; }
 .brand-short { display: none; }
+.site-header nav .nav-home { display: none; }
 .site-header nav { display: flex; gap: 30px; }
 .site-header nav a, .home-link { text-decoration: none; color: rgba(255,255,255,0.72); font-family: var(--display); font-weight: 700; font-size: 1.12rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 6px 0; border-bottom: 3px solid transparent; white-space: nowrap; }
 .site-header nav a[aria-current="page"], .site-header nav a:hover, .home-link[aria-current="page"], .home-link:hover { color: #fff; border-bottom-color: var(--brand); }
@@ -68,7 +69,8 @@ button { font: inherit; color: inherit; }
   .site-header.nav-open nav { display: flex; }
   .site-header nav a { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 1.25rem; }
   .site-header nav a[aria-current="page"] { color: var(--brand); border-bottom-color: rgba(255,255,255,0.08); }
-  .bar-left { gap: 16px; }
+  .home-link { display: none; }
+  .site-header nav .nav-home { display: block; }
 }
 @media (max-width: 480px) {
   .brand-long { display: none; } .brand-short { display: inline; }
@@ -94,7 +96,10 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .levels { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .level-btn { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 0.95rem; font-weight: 600; cursor: pointer; }
 .level-btn .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--lvl); }
-.level-btn[aria-pressed="false"] { opacity: 0.45; text-decoration: line-through; }
+.level-btn { transition: opacity .12s, box-shadow .12s; }
+.levels.filtering .level-btn[aria-pressed="true"] { border-color: var(--lvl); box-shadow: 0 0 0 2px var(--lvl); }
+.levels.filtering .level-btn[aria-pressed="false"] { opacity: 0.45; text-decoration: line-through; }
+.levels .link-btn { align-self: center; margin-left: 4px; }
 
 /* Month bar */
 .month-bar { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 10px; }
@@ -128,7 +133,11 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
   .chips { flex-direction: row; flex-wrap: wrap; justify-content: center; }
 }
 
-.today-link { text-align: right; margin: 6px 0 0; }
+.today-link { text-align: right; margin: 12px 0 0; }
+.today-link .btn[hidden] { display: none; }
+.btn-small { font-size: 1rem; padding: 7px 14px; }
+.list-month { font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-size: 1.05rem; margin: 10px 0 -2px; }
+.list-month:first-child { margin-top: 0; }
 .link-btn { background: none; border: 0; color: var(--accent); font-weight: 600; cursor: pointer; padding: 4px 0; text-decoration: underline; font-size: 0.95rem; }
 
 /* List under calendar */
@@ -172,8 +181,8 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .link-list a { font-weight: 700; }
 .link-list span { display: block; color: var(--muted); font-size: 0.95rem; }
 
-.site-footer { background: var(--night); color: rgba(255,255,255,0.75); font-size: 0.95rem; margin-top: 30px; }
-.foot-grid { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr 1.4fr; gap: 28px; padding-top: 34px; padding-bottom: 26px; }
+.site-footer { background: var(--night); color: rgba(255,255,255,0.75); font-size: 0.95rem; margin-top: 10px; }
+.foot-grid { display: grid; grid-template-columns: 1.3fr 1fr 1.5fr; gap: 28px; padding-top: 34px; padding-bottom: 26px; }
 .site-footer h2 { font-family: var(--display); font-size: 1.1rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #fff; margin: 0 0 10px; }
 .site-footer p { margin: 0 0 10px; }
 .site-footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -182,8 +191,10 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .site-footer .brand { margin-bottom: 12px; font-size: 1.35rem; }
 .site-footer .brand:hover { text-decoration: none; }
 .contact-soon { display: inline-block; border: 1px dashed rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 10px; font-size: 0.9rem; }
+.foot-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; padding-bottom: 14px; font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.foot-links span { color: var(--brand); }
 .foot-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 14px; padding-bottom: 22px; font-size: 0.85rem; color: rgba(255,255,255,0.55); }
-@media (max-width: 860px) { .foot-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 860px) { .foot-grid { grid-template-columns: 1fr 1fr; } .foot-legal { grid-column: 1 / -1; } }
 @media (max-width: 520px) { .foot-grid { grid-template-columns: 1fr; gap: 22px; } }
 
 /* ---- Hero banners ---- */
@@ -267,15 +278,20 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .home { padding-top: 6px; }
 .home-block { margin: 10px 0 34px; }
 .home-block h2 { font-size: 1.9rem; font-weight: 800; text-transform: uppercase; margin: 0 0 12px; }
-.home-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.home-head a { font-family: var(--display); font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.04em; text-decoration: none; color: var(--brand); }
-.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
-.tile { display: flex; flex-direction: column; gap: 4px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; text-decoration: none; color: var(--text); transition: border-color .12s, transform .12s; }
+.home-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.home-head h2 { margin: 0; }
+.home-head { margin-bottom: 12px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tile { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; text-decoration: none; color: var(--text); transition: border-color .12s, transform .12s; }
 .tile:hover { border-color: var(--brand); transform: translateY(-2px); }
-.tile-k { font-family: var(--display); font-weight: 800; color: var(--brand); font-size: 1.1rem; letter-spacing: 0.06em; }
-.tile strong { font-family: var(--display); font-size: 1.6rem; text-transform: uppercase; line-height: 1.05; }
-.tile span:last-child { color: var(--muted); font-size: 0.95rem; }
-@media (max-width: 720px) { .tiles { grid-template-columns: 1fr; } }
+.tile-icon { flex: none; display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--night-2); color: var(--brand); }
+.tile-icon svg { width: 26px; height: 26px; }
+.tile-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tile strong { font-family: var(--display); font-size: 1.45rem; text-transform: uppercase; line-height: 1.05; }
+.tile-text span { color: var(--muted); font-size: 0.95rem; }
+.tile-go { flex: none; font-size: 1.8rem; line-height: 1; color: var(--brand); }
+@media (max-width: 640px) { .tiles { grid-template-columns: 1fr; gap: 10px; } }
+.home-block:last-child { margin-bottom: 10px; }
 .about-block p { max-width: 680px; }
 
 .filter-box > summary { display: none; }
@@ -287,3 +303,4 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
   .filter-box[open] > summary::after { content: "−"; }
   .filter-box .gear-filters { border: 0; border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); }
 }
+@media (max-width: 480px) { .foot-links { gap: 6px 10px; } .fl-cut { flex-basis: 100%; height: 0; overflow: hidden; font-size: 0; } }
