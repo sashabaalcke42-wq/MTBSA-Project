@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Mountain Biking SA · Race Calendar</title>
   <meta name="description" content="Every South Australian mountain bike race on one simple calendar.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <div class="wrap">
-      <a class="brand" href="index.html">Mountain Biking <span>SA</span></a>
+      <a class="brand" href="index.html"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="19" fill="#d2602a"/><path d="M4 30 L15 14 L21 22 L26 16 L36 30 Z" fill="#121814"/><path d="M15 14 L18.5 19 L16.5 18 L14 20.5 L12.3 18 Z" fill="#fff"/><path d="M8 33 Q16 27 22 31 T34 30" fill="none" stroke="#fff" stroke-width="1.6" stroke-dasharray="1.5 3" stroke-linecap="round"/></svg><span>Mountain Biking <b>SA</b></span></a>
       <nav>
         <a href="index.html" aria-current="page">Calendar</a>
         <a href="new-to-racing.html">New to racing?</a>
@@ -19,10 +22,19 @@
     </div>
   </header>
 
-  <main class="wrap">
+  <main>
     <section id="calendar-view">
-      <h1>SA race calendar</h1>
-      <p class="lead">Tap a race to see what it is and how to enter.</p>
+      <div class="hero">
+        <svg class="topo" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="1.2"><path d="M-20 80 C120 20 220 140 360 90 S600 10 820 70"/><path d="M-20 120 C120 60 230 180 370 130 S610 50 820 110"/><path d="M-20 160 C130 100 240 220 380 170 S620 90 820 150"/><path d="M-20 200 C140 140 250 260 390 210 S630 130 820 190"/><path d="M-20 240 C150 180 260 300 400 250 S640 170 820 230"/><path d="M-20 280 C160 220 270 340 410 290 S650 210 820 270"/><ellipse cx="640" cy="80" rx="60" ry="26"/><ellipse cx="640" cy="80" rx="34" ry="13"/></g></svg>
+        <div class="wrap">
+          <p class="kicker">South Australia · MTB race calendar</p>
+          <h1>Every SA race.<br><em>One calendar.</em></h1>
+          <p class="sub">Cross-country, downhill, enduro and beginner days, from the Adelaide Hills to Mount Gambier. Tap a race to see what it is and how to enter.</p>
+          <a class="btn btn-main" href="#cal-start" id="find">Find a race</a><a class="btn btn-ghost" href="new-to-racing.html">New to racing?</a>
+        </div>
+        <svg class="ridge" viewBox="0 0 1200 90" preserveAspectRatio="none" aria-hidden="true"><path class="far" d="M0 60 L90 34 L170 52 L260 18 L340 46 L430 28 L520 50 L610 12 L700 44 L790 26 L880 48 L980 16 L1070 40 L1200 24 L1200 90 L0 90 Z"/><path class="near" d="M0 78 L120 58 L230 72 L350 50 L470 70 L600 46 L730 68 L860 52 L990 72 L1100 56 L1200 66 L1200 90 L0 90 Z"/><path class="trail" d="M0 84 C150 70 260 86 380 74 S640 60 780 76 S1050 68 1200 78"/></svg>
+      </div>
+      <div class="wrap" id="cal-start">
 
       <div class="levels" id="levels" aria-label="Show race levels"></div>
 
@@ -42,9 +54,10 @@
 
       <h2 class="list-title" id="list-title">This month</h2>
       <ul class="race-list" id="list"></ul>
+      </div>
     </section>
 
-    <section id="detail-view" hidden></section>
+    <section id="detail-view" class="wrap detail" hidden></section>
   </main>
 
   <footer class="site-footer">
