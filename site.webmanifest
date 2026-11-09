@@ -1,0 +1,14 @@
+{
+  "name": "Mountain Biking SA",
+  "short_name": "MTB SA",
+  "description": "Every South Australian mountain bike race on one calendar.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#121814",
+  "theme_color": "#121814",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
