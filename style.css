@@ -272,7 +272,10 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .gear-take { margin: 0 0 16px; font-size: 0.95rem; }
 .gear-take dt { font-weight: 700; color: var(--muted); margin-top: 8px; }
 .gear-take dd { margin: 0; }
-.gd-close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; z-index: 1; }
+.gd-close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 0; background: rgba(0,0,0,0.55); color: #fff; cursor: pointer; z-index: 1; }
+.gd-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+.gd-close:hover { background: rgba(0,0,0,0.75); }
+.gd-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .gear-checked { font-size: 0.82rem; color: var(--muted); margin: 12px 0 0; }
 @media (max-width: 640px) { .gd-inner { grid-template-columns: 1fr; } .gd-art { min-height: 160px; } .gd-name { font-size: 1.7rem; } }
 
@@ -314,7 +317,8 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .g-tab[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand);  }
 .our-take { background: var(--bg); border-left: 4px solid var(--brand); border-radius: 6px; padding: 8px 12px; }
 .tested { position: absolute; right: 10px; top: 10px; background: #fff; color: var(--night); font-family: var(--display); letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
-@media (max-width: 480px) { .g-tab { font-size: 1rem; padding: 7px 12px; } }
+@media (max-width: 480px) { .g-tabs { gap: 6px; } .g-tab { font-size: 0.95rem; padding: 7px 11px; letter-spacing: 0.02em; } }
+@media (max-width: 380px) { .g-tabs { gap: 5px; } .g-tab { font-size: 0.9rem; padding: 6px 9px; letter-spacing: 0; } }
 
 /* Where to ride */
 .ride-list { list-style: none; padding: 0 !important; margin: 0 0 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -392,6 +396,7 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 /* Small dashed "trail" under section headings */
 .home-block h2::after, .content h2::after { content: ""; display: block; width: 46px; height: 4px; margin-top: 6px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--brand) 0 12px, transparent 12px 18px); }
 .home-head h2::after { margin-top: 4px; }
+.cl-head h2::after { display: none; }
 .list-title { padding-bottom: 12px; background: repeating-linear-gradient(90deg, var(--brand) 0 12px, transparent 12px 18px) left bottom / 46px 4px no-repeat; }
 
 /* Home banner numbers */
@@ -428,8 +433,15 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
   .tile, .ride, .link-list li, .cl-group { animation: rise .45s ease-out backwards; animation-delay: .15s; }
 }
 
+/* Back to top button */
+.to-top { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); z-index: 30; width: 46px; height: 46px; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 0; background: var(--brand); color: #fff; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.3); opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity .2s, transform .2s, visibility .2s; }
+.to-top.show { opacity: 1; visibility: visible; transform: none; }
+.to-top:hover { filter: brightness(1.08); }
+.to-top:focus-visible { outline: 3px solid var(--text); outline-offset: 2px; }
+.to-top svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+
 @media print {
-  .site-header, .site-footer, .hero .ridge, .hero .topo, .download-box, .no-print, .callout { display: none !important; }
+  .site-header, .site-footer, .to-top, .hero .ridge, .hero .topo, .download-box, .no-print, .callout { display: none !important; }
   body { background: #fff; color: #000; }
   .hero { background: none; color: #000; }
   .hero .wrap { padding: 0 0 8px; }

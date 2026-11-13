@@ -101,7 +101,7 @@
   const dialog = $('g-dialog'), detail = $('g-detail');
   function open(g) {
     detail.innerHTML =
-      '<button type="button" class="gd-close" aria-label="Close">×</button>' +
+      '<button type="button" class="gd-close" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
       '<div class="gd-art">' + art(g.category) + '</div>' +
       '<div class="gd-text">' +
         '<p class="gear-brand">' + esc(g.brand) + ' · ' + esc(g.category) + '</p>' +
@@ -123,7 +123,7 @@
     const tabs = $('g-tabs');
     const have = SECTIONS.filter(s => gear.some(g => g.section === s));
     tabs.innerHTML = ['', ...have].map(s =>
-      '<button type="button" class="g-tab" data-s="' + esc(s) + '" aria-pressed="' + (s === section) + '">' + (s || 'Everything') + '</button>').join('');
+      '<button type="button" class="g-tab" data-s="' + esc(s) + '" aria-pressed="' + (s === section) + '">' + (s || 'All gear') + '</button>').join('');
     tabs.querySelectorAll('.g-tab').forEach(b => b.addEventListener('click', () => {
       section = b.dataset.s; drawTabs(); fillCats(); draw();
     }));

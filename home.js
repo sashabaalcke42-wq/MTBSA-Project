@@ -28,7 +28,11 @@
       .filter(r => r.id && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && (r.end_date || r.date) >= today)
       .sort((a, b) => a.date.localeCompare(b.date));
     const stats = document.getElementById('hero-stats');
-    if (stats && upcoming.length) { document.getElementById('st-races').textContent = upcoming.length; stats.hidden = false; }
+    // Count the same window the calendar shows: today up to one year from now.
+    const yr = new Date(d.getFullYear() + 1, d.getMonth(), d.getDate() - 1);
+    const yearEnd = yr.getFullYear() + '-' + String(yr.getMonth() + 1).padStart(2, '0') + '-' + String(yr.getDate()).padStart(2, '0');
+    const inYear = upcoming.filter(r => r.date <= yearEnd).length;
+    if (stats && inYear) { document.getElementById('st-races').textContent = inYear; stats.hidden = false; }
     const next = upcoming.slice(0, 3);
     if (!next.length) { list.innerHTML = '<li class="empty">No upcoming races listed yet. New dates get added as clubs announce them.</li>'; return; }
     list.innerHTML = next.map(r => {
