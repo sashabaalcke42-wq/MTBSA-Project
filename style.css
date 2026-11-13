@@ -383,6 +383,51 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .checklist-banner .cb-go { margin-left: auto; font-family: var(--display); font-weight: 800; font-size: 1.05rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--brand-ink); background: var(--brand); border-radius: 8px; padding: 7px 14px; white-space: nowrap; }
 @media (max-width: 520px) { .checklist-banner .cb-go { display: none; } }
 
+/* ---- Polish: date badges, heading accents, footer ridge, links, motion ---- */
+.date-badge { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 54px; padding: 6px 0 5px; border-radius: 10px; background: color-mix(in srgb, var(--lvl) 12%, var(--card)); border-top: 4px solid var(--lvl); line-height: 1; }
+.date-badge b { font-family: var(--display); font-size: 1.65rem; font-weight: 800; color: var(--text); }
+.date-badge small { font-family: var(--display); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--lvl); margin-top: 2px; }
+.race.done .date-badge { filter: grayscale(0.6); }
+
+/* Small dashed "trail" under section headings */
+.home-block h2::after, .content h2::after { content: ""; display: block; width: 46px; height: 4px; margin-top: 6px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--brand) 0 12px, transparent 12px 18px); }
+.home-head h2::after { margin-top: 4px; }
+.list-title { padding-bottom: 12px; background: repeating-linear-gradient(90deg, var(--brand) 0 12px, transparent 12px 18px) left bottom / 46px 4px no-repeat; }
+
+/* Home banner numbers */
+.hero-stats { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 16px 0 0; padding: 0; color: rgba(255,255,255,0.75); font-size: 0.95rem; }
+.hero-stats[hidden] { display: none; }
+.hero-stats li { display: flex; align-items: baseline; gap: 6px; }
+.hero-stats b { font-family: var(--display); font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+.hero-stats li + li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--brand); margin-right: 10px; align-self: center; }
+@media (max-width: 480px) { .hero-stats { gap: 6px 18px; } .hero-stats li + li::before { display: none; } }
+
+/* Hills along the top of the footer, matching the banners */
+.site-footer { position: relative; margin-top: 56px; }
+.site-footer::before { content: ""; position: absolute; left: 0; right: 0; top: -40px; height: 41px; background: var(--night); pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 40' preserveAspectRatio='none'%3E%3Cpath d='M0 40 L0 26 L110 12 L220 24 L340 6 L460 22 L580 10 L700 26 L830 8 L950 22 L1080 4 L1200 18 L1200 40 Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 40' preserveAspectRatio='none'%3E%3Cpath d='M0 40 L0 26 L110 12 L220 24 L340 6 L460 22 L580 10 L700 26 L830 8 L950 22 L1080 4 L1200 18 L1200 40 Z'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+
+/* Links page: tidier cards */
+.content .link-list { padding-left: 0; }
+.link-list li { position: relative; padding: 14px 44px 14px 16px; transition: border-color .12s, transform .12s; }
+.link-list li:hover { border-color: var(--brand); transform: translateY(-1px); }
+.link-list li > a:first-child { font-family: var(--display); font-size: 1.3rem; font-weight: 700; line-height: 1.15; text-decoration: none; color: var(--text); }
+.link-list li > a:first-child::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.link-list li::after { content: "\2197"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: var(--brand); pointer-events: none; }
+.link-list span { margin-top: 2px; }
+.link-list span a { position: relative; z-index: 1; }
+
+/* Gentle fade-up as pages open (skipped if the phone asks for less motion) */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .hero .wrap > * { animation: rise .5s ease-out backwards; }
+  .hero .wrap > :nth-child(2) { animation-delay: .06s; }
+  .hero .wrap > :nth-child(3) { animation-delay: .12s; }
+  .hero .wrap > :nth-child(n+4) { animation-delay: .18s; }
+  .tile, .ride, .link-list li, .cl-group { animation: rise .45s ease-out backwards; animation-delay: .15s; }
+}
+
 @media print {
   .site-header, .site-footer, .hero .ridge, .hero .topo, .download-box, .no-print, .callout { display: none !important; }
   body { background: #fff; color: #000; }

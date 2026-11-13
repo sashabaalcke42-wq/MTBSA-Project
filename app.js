@@ -148,12 +148,19 @@
         if (mk !== lastMonth) { lastMonth = mk; head = '<li class="list-month">' + esc(fmtMonth.format(toDate(mk + '-01'))) + '</li>'; }
       }
       return head + '<li><a class="race' + (isPast(r) ? ' done' : '') + '" href="#race/' + encodeURIComponent(r.id) + '">' +
-      '<span class="bar lvl-' + levelKey(r.level) + '"></span>' +
+      badge(r.date, 'lvl-' + levelKey(r.level)) +
       '<span class="race-body"><span class="race-when">' + esc(when(r, fmtShort)) + (isPast(r) ? ' · finished' : '') + '</span>' +
       '<span class="race-name">' + esc(r.name) + '</span>' +
       '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span></span>' +
       tag(r) + '</a></li>';
     }).join('');
+  }
+
+  // Calendar-style date badge (big day number, short month) for the race lists.
+  function badge(iso, cls) {
+    const [y, m, d] = iso.split('-').map(Number);
+    const mon = new Date(y, m - 1, d).toLocaleDateString('en-AU', { month: 'short' });
+    return '<span class="date-badge ' + cls + '" aria-hidden="true"><b>' + d + '</b><small>' + esc(mon) + '</small></span>';
   }
 
   // ---- Add to calendar (.ics) ----
