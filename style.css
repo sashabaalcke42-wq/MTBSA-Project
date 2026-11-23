@@ -217,7 +217,7 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .site-footer a:hover { color: #fff; text-decoration: underline; }
 .site-footer .brand { margin-bottom: 12px; font-size: 1.35rem; }
 .site-footer .brand:hover { text-decoration: none; }
-.contact-soon { display: inline-block; border: 1px dashed rgba(255,255,255,0.3); border-radius: 8px; padding: 6px 10px; font-size: 0.9rem; }
+.site-footer .contact-email { color: #fff; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .foot-links { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding-top: 14px; padding-bottom: 14px; font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .foot-links span { color: var(--brand); }
 .foot-links::before, .foot-bottom::before { content: ""; position: absolute; top: 0; left: 16px; right: 16px; height: 1px; background: rgba(255,255,255,0.1); }

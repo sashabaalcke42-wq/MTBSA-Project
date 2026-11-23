@@ -22,8 +22,8 @@ Last updated: 23 November 2026
 
 **Start:** 23 Nov 2026. **Finish line:** a contact email is on the site and at least 8 clubs or groups have been emailed.
 
-1. [ ] Set up **hello@mtbsa.com.au** for free with Cloudflare Email Routing (it forwards to your normal inbox).
-2. [ ] Swap "Contact email coming soon" on every page for hello@mtbsa.com.au.
+1. [ ] Set up **support@mtbsa.com.au** for free with Cloudflare Email Routing (it forwards to your normal inbox).
+2. [x] Put support@mtbsa.com.au on every page (shows in the footer).
 3. [ ] Email SA clubs, trail crews and race organisers asking them to share or link the site (list and email draft are in the project files: `outreach/clubs-email-list.md`).
 4. [ ] Post in SA MTB Facebook groups (check each group's rules first, and ask an admin if unsure).
 5. [ ] Make an MTB SA Instagram and do a first post (the calendar is a good one).
