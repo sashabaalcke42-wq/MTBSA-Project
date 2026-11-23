@@ -64,7 +64,7 @@ The site's home is **https://mtbsa.com.au**. Every page's `<head>` already point
 - `404.html` is the "page not found" page.
 - `_headers` keeps the temporary `pages.dev` address out of Google and adds some basic safety settings. Only Cloudflare reads it.
 
-mountainbikingsa.com.au and mountainbikingsouthaustralia.com.au redirect to mtbsa.com.au. Those redirects are set in Cloudflare, not in this repo.
+mountainbikingsa.com.au, mountainbikingsouthaustralia.com.au and www.mtbsa.com.au redirect to mtbsa.com.au (mtbsa.online can too). Those redirects are set in Cloudflare (Rules → Redirect Rules on each domain), not in this repo.
 
 ## Visitor stats
 
