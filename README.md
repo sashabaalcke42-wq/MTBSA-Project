@@ -72,6 +72,6 @@ Visits are counted anonymously by GoatCounter (no cookies). Only the account own
 
 ## Running it
 
-It's a plain static site with no build step. **Cloudflare Pages** hosts it for free and republishes it within a minute of any change to `main`. In Cloudflare the build settings are: framework **None**, build command **empty**, build output directory **`/`**.
+It's a plain static site with no build step. **Cloudflare Pages** (project `mtbsa`, also at https://mtbsa.pages.dev) hosts it for free and republishes it within a minute of any change to `main`. In Cloudflare the build settings are: framework **None**, build command **empty**, build output directory **`/`**.
 
 To preview on your own computer, run `python3 -m http.server` in this folder and open http://localhost:8000.
