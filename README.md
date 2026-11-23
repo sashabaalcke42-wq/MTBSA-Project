@@ -19,6 +19,7 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `race-day-checklist.html` + `race-day-checklist.pdf` | The packing checklist. If you change the list, ask Claude to remake the PDF too. |
 | `gear.html` + `gear.js` + `gear.csv` | Gear guide with filters for type, skill level, price and brand. Add gear as rows in `gear.csv`. |
 | `icons/`, `favicon.svg`, `site.webmanifest` | The app icon for browser tabs and phone home screens. |
+| `analytics.js` | Visitor stats with PostHog (no cookies). Feeds the private stats dashboard. The PostHog project token goes at the top. |
 | `style.css` | How everything looks (works in light and dark mode, and on phones). |
 
 ## Adding a race

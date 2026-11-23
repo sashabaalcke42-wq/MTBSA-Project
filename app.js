@@ -215,6 +215,8 @@
       drawDetail(decodeURIComponent(m[1])); calView.hidden = true; detailView.hidden = false; window.scrollTo(0, 0);
       // Visitor stats: count each race page as its own page (does nothing if the stats script is blocked).
       if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: '/race/' + m[1], title: document.title });
+      const opened = races.find(x => x.id === decodeURIComponent(m[1]));
+      if (opened && window.siteStat) window.siteStat('race_opened', { race_id: opened.id, race_name: opened.name });
     }
     else { detailView.hidden = true; calView.hidden = false; cameFromCalendar = true; }
   }
