@@ -49,6 +49,8 @@ CANCELLED = re.compile(r"cancel|postpon", re.I)
 SKIP_HOSTS = {"fonts.googleapis.com", "fonts.gstatic.com", "schema.org",
               "www.w3.org", "gc.zgo.at"}
 SKIP_HOST_SUFFIXES = (".posthog.com", ".goatcounter.com")
+# These always turn away automatic visitors, so their links can't be checked.
+BLOCKS_ROBOTS = ("facebook.com", "instagram.com")
 URL_RE = re.compile(r"https?://[^\s\"'<>()`,]+")
 SCAN_GLOBS = ["*.html", "*.csv", "*.js"]
 
@@ -260,8 +262,11 @@ def check_calendars(races, text, today, out):
                             url, change)
                 if upcoming and CANCELLED.search(name) and not CANCELLED.search(ours["name"]):
                     out.add("race_cancelled", "calendar", f"{ours['name']} may be cancelled or postponed",
-                            f"The organiser's calendar now calls it \"{name}\". Have a look and "
-                            "ask Claude to update or remove it.", url, key=rid + name)
+                            f"The organiser's calendar now calls it \"{name}\". Have a look: Remove takes "
+                            "it off the site. If it's only postponed, Dismiss this and the new date "
+                            "will show up here once the organiser sets one.", url,
+                            {"op": "csv_delete", "file": "races.csv", "key": "id", "value": ours["id"]},
+                            key=rid + name)
             elif day and day >= today and not CANCELLED.search(name):
                 row = new_race_row(races, name, day, course, org, cal_url, url,
                                    guess_level(name, cal), guess_type(name, cal))
@@ -333,14 +338,14 @@ def check_auscycling(races, text, today, out):
         day = got[1] if got else None
         if day and day < today:
             continue
-        change = None
-        if day:
-            level = "National" if "national" in s else "State"
-            row = new_race_row(races, title, day, "See entry page", "AusCycling",
-                               "https://auscycling.org.au/", url, level, guess_type(title, ""))
-            if got[2]:
-                row["end_date"] = got[2].isoformat()
-            change = {"op": "csv_append", "file": "races.csv", "row": row}
+        level = "National" if "national" in s else "State"
+        row = new_race_row(races, title, day or today, "See entry page", "AusCycling",
+                           "https://auscycling.org.au/", url, level, guess_type(title, ""))
+        if not day:
+            row["date"] = ""  # couldn't read it: the dashboard asks for it
+        elif got and got[2]:
+            row["end_date"] = got[2].isoformat()
+        change = {"op": "csv_append", "file": "races.csv", "row": row}
         out.add("race_new", "calendar",
                 f"New on AusCycling SA: {title}" + (f" on {nice(day)}" if day else ""),
                 "A mountain bike event on AusCycling's SA list that isn't on the site yet. "
@@ -363,16 +368,9 @@ def shop_price(url):
                 return price, (cmp_ if cmp_ > price else None), bool(j.get("available", True))
             except (ValueError, KeyError, TypeError):
                 pass
-    p = fetch_retry(url)
-    if p.status != 200:
-        return None
-    m = (re.search(r'property="product:price:amount"\s+content="([\d.]+)"', p.text)
-         or re.search(r'itemprop="price"\s+content="([\d.]+)"', p.text)
-         or re.search(r'"@type"\s*:\s*"Offer".{0,400}?"price"\s*:\s*"?([\d.]+)', p.text, re.S))
-    if not m:
-        return None
-    stock = not re.search(r'schema\.org/OutOfStock|"availability"\s*:\s*"OutOfStock"', p.text)
-    return float(m.group(1)), None, stock
+    # Other shops' pages often list several prices (other sizes, related
+    # products), so guessing from them gave wrong prices. Skip those.
+    return None
 
 
 def money(v):
@@ -407,10 +405,8 @@ def check_gear(gear, today, out):
                      "expect": {"price_aud": g["price_aud"]},
                      "set": {"price_aud": f"{price:g}", "rrp_aud": "" if rrp is None else f"{rrp:g}",
                              "checked": today.isoformat()}})
-        if not stock:
-            out.add("gear_stock", "gear", f"{label} looks sold out at {g['shop']}",
-                    "You might want to point it to another shop or swap it for something similar.",
-                    g["shop_url"], key=g["id"])
+        # Stock isn't reported: shops often show "sold out" online for things
+        # that are in their stores, so it gave too many false alarms.
 
 
 # ---------------------------------------------------------------- links
@@ -442,6 +438,12 @@ def collect_links():
     return sorted(u for u in urls if u + "/" not in urls)
 
 
+def ask_url(url):
+    """A change the dashboard finishes: the person pastes the new link."""
+    files = files_containing(url)
+    return {"op": "replace_text", "files": files, "from": url, "to": "", "ask": "url"} if files else None
+
+
 def check_links(urls, out):
     blocked = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
@@ -450,20 +452,26 @@ def check_links(urls, out):
         url = p.url
         a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(p.final)
         used = ", ".join(files_containing(url)) or "the site"
-        if p.status in (401, 403, 429):  # sites that block robots; not a real break
+        host = (a.hostname or "").lower()
+        if p.status in (400, 401, 403, 429) or host.endswith(BLOCKS_ROBOTS):
+            # Sites that turn away automatic checks; not a real break.
             blocked += 1
         elif p.status == 0 or p.status >= 400:
             why = ("the site didn't answer" if p.status == 0 else
                    "page not found" if p.status in (404, 410) else f"error {p.status}")
             out.add("link_broken", "links", f"Broken link: {url}",
-                    f"It didn't work today ({why}). It's used in {used}.", url, key=url)
+                    f"It didn't work today ({why}). It's used in {used}. Paste a working link to "
+                    "swap it in, or Dismiss if it's just having a bad day.", url,
+                    ask_url(url), key=url)
         elif a.path.strip("/") and not b.path.strip("/"):
             out.add("link_home", "links", f"Link now goes to a home page: {url}",
                     f"It now ends up at {p.final}, so the page it pointed to has probably gone. "
-                    f"It's used in {used}.", url, key=url)
+                    f"It's used in {used}. Paste a better link to swap it in.", url,
+                    ask_url(url), key=url)
         elif "/products/" in a.path and "/products/" not in b.path:
             out.add("link_home", "links", f"Shop link no longer goes to the product: {url}",
-                    f"It now ends up at {p.final}. It's used in {used}.", url, key=url)
+                    f"It now ends up at {p.final}. It's used in {used}. Paste the product's new "
+                    "link to swap it in.", url, ask_url(url), key=url)
         elif p.permanent and p.final.rstrip("/") != url.rstrip("/") and b.hostname:
             files = files_containing(url)
             if files:
@@ -472,6 +480,112 @@ def check_links(urls, out):
                         f"in {', '.join(files)}.", p.final,
                         {"op": "replace_text", "files": files, "from": url, "to": p.final})
     return blocked
+
+
+# ---------------------------------------------------------------- auto-fix
+
+# Changes that come straight from the organiser or shop, so the morning check
+# makes them itself. New races and heads-ups still wait for the dashboard.
+AUTO_KINDS = {"race_date", "link_moved", "gear_price"}
+
+
+def csv_records(text):
+    """Splits CSV text into (fields, start, end) for each record."""
+    out, i, n = [], 0, len(text)
+    while i < n:
+        start, fields, field, quoted = i, [], "", False
+        while True:
+            if i >= n:
+                fields.append(field)
+                break
+            ch = text[i]
+            if quoted:
+                if ch == '"' and text[i + 1:i + 2] == '"':
+                    field += '"'; i += 2
+                elif ch == '"':
+                    quoted = False; i += 1
+                else:
+                    field += ch; i += 1
+                continue
+            if ch == '"' and field == "":
+                quoted = True; i += 1
+            elif ch == ",":
+                fields.append(field); field = ""; i += 1
+            elif ch == "\r" and text[i + 1:i + 2] == "\n":
+                fields.append(field); i += 2
+                break
+            elif ch == "\n":
+                fields.append(field); i += 1
+                break
+            else:
+                field += ch; i += 1
+        if fields != [""]:
+            out.append((fields, start, i))
+    return out
+
+
+def csv_quote(v):
+    v = "" if v is None else str(v)
+    if re.search(r'[",\r\n]', v) or v != v.strip():
+        return '"' + v.replace('"', '""') + '"'
+    return v
+
+
+def csv_set(text, key, value, set_, expect):
+    """Changes one row and leaves every other line exactly as it was."""
+    recs = csv_records(text)
+    header = recs[0][0]
+    k = header.index(key)
+    for fields, start, end in recs[1:]:
+        if len(fields) > k and fields[k] == value:
+            for col, want in expect.items():
+                if col in header and (fields[header.index(col)] if header.index(col) < len(fields) else "") != (want or ""):
+                    return None  # changed since the check looked
+            new = [fields[c] if c < len(fields) else "" for c in range(len(header))]
+            for col, v in set_.items():
+                if col in header:
+                    new[header.index(col)] = str(v)
+            ending = re.search(r"\r?\n$", text[start:end])
+            return text[:start] + ",".join(csv_quote(v) for v in new) + (ending.group(0) if ending else "") + text[end:]
+    return None
+
+
+def apply_change(change):
+    """Applies one change to the files in this checkout. Returns the files changed."""
+    op = change.get("op")
+    files = change.get("files") if op == "replace_text" else [change.get("file")]
+    changed = []
+    for name in files or []:
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+\.(csv|html|js)", name or ""):
+            return []
+        path = ROOT / name
+        if not path.exists():
+            return []
+        text = path.read_text(encoding="utf-8")
+        if op == "csv_set":
+            new = csv_set(text, change["key"], change["value"], change.get("set", {}), change.get("expect", {}))
+        elif op == "replace_text":
+            new = text.replace(change["from"], change["to"]) if change["from"] in text else None
+        else:
+            new = None
+        if new is not None and new != text:
+            with open(path, "w", encoding="utf-8", newline="") as f:
+                f.write(new)
+            changed.append(name)
+    return changed
+
+
+def auto_fix(suggestions, now):
+    """Makes the safe fixes. Returns (fixed, still_to_look_at)."""
+    fixed, rest = [], []
+    for s in suggestions:
+        if s["kind"] in AUTO_KINDS and s.get("change") and apply_change(s["change"]):
+            fixed.append({"id": s["id"], "kind": s["kind"], "group": s["group"],
+                          "title": s["title"], "url": s.get("url", ""),
+                          "at": now.isoformat(timespec="seconds")})
+        else:
+            rest.append(s)
+    return fixed, rest
 
 
 # ---------------------------------------------------------------- main
@@ -505,6 +619,9 @@ def main():
     ap.add_argument("--out", help="where to write results.json")
     ap.add_argument("--decisions", help="decisions.json from the dashboard (added/dismissed)")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--auto-fix", action="store_true",
+                    help="make the safe fixes in this checkout (dates, moved links, exact prices)")
+    ap.add_argument("--commit-message", help="where to write a commit message for the fixes")
     args = ap.parse_args()
 
     now = dt.datetime.now(ADELAIDE)
@@ -523,12 +640,26 @@ def main():
             decided = {}
 
     suggestions, checked = run(now.date(), decided)
+    fixed = []
+    if args.auto_fix and not args.dry_run:
+        fixed, suggestions = auto_fix(suggestions, now)
+        for f in fixed:
+            decided[f["id"]] = {"action": "auto", "at": f["at"], "title": f["title"]}
+        if args.decisions and fixed:
+            Path(args.decisions).write_text(json.dumps({"decisions": decided}, indent=1) + "\n", encoding="utf-8")
+        if args.commit_message and fixed:
+            lines = [f"Daily site check: {len(fixed)} automatic fix" + ("es" if len(fixed) > 1 else ""), ""]
+            lines += [f"- {f['title']}" for f in fixed]
+            Path(args.commit_message).write_text("\n".join(lines) + "\n", encoding="utf-8")
     result = {
         "generated": now.isoformat(timespec="seconds"),
         "generated_text": now.strftime("%A %-d %B %Y, %-I:%M %p"),
         "checked": checked,
         "suggestions": suggestions,
+        "auto_fixed": fixed,
     }
+    for f in fixed:
+        print(f"[fixed] {f['title']}")
     for s in suggestions:
         print(f"[{s['group']}] {s['title']}")
     print(f"{len(suggestions)} suggestion(s), {checked['links']} links checked, "

@@ -82,7 +82,12 @@ Visits are counted anonymously by GoatCounter (no cookies). Only the account own
 
 ## Daily site check
 
-Every morning at 9 AM Adelaide time a free GitHub Action (`.github/workflows/daily-site-check.yml`) checks the club race calendars and AusCycling against `races.csv`, gear prices against the shops in `gear.csv`, and every link on the site. Its suggestions show in the **Site check** box on the private stats dashboard, where **Add** saves a change straight to `main` and **Dismiss** hides it. The results live on the `site-check-data` branch, which Cloudflare skips. To run a check now: **Actions → Daily site check → Run workflow**.
+Every morning at 9 AM Adelaide time a free GitHub Action (`.github/workflows/daily-site-check.yml`) checks the club race calendars and AusCycling against `races.csv`, gear prices against the shops in `gear.csv`, and every link on the site.
+
+- **Fixed automatically** (saved straight to `main`): race dates the organiser changed, links that moved for good, and exact prices from Shopify shops (99 Bikes, The Odd Spoke).
+- **Waits for you** in the **Site check** tab on the private stats dashboard: new races (check the details, then Add), races that look cancelled (Remove or Dismiss), and broken links (paste a new link, or Dismiss).
+
+The results live on the `site-check-data` branch, which Cloudflare skips. To run a check now: **Actions → Daily site check → Run workflow**.
 
 ## Running it
 

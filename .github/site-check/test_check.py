@@ -117,6 +117,20 @@ class Gear(unittest.TestCase):
                        "shop_url": "https://99bikes.com.au/products/gloves"}], TODAY, out)
         self.assertEqual(out.items[0]["change"]["set"], {"price_aud": "24.99", "rrp_aud": "34.99", "checked": "2026-11-24"})
 
+    def test_other_shops_are_skipped(self):
+        c.fetch = FakeWeb({"x.html": '<meta property="product:price:amount" content="44.99">'})
+        out = c.Findings()
+        c.check_gear([{"id": "g", "name": "Grips", "brand": "ODI", "shop": "Pushys", "price_aud": "49.99",
+                       "shop_url": "https://www.pushys.com.au/x.html"}], TODAY, out)
+        self.assertEqual(out.items, [])
+
+    def test_sold_out_is_not_reported(self):
+        c.fetch = FakeWeb({"gloves.js": '{"price": 2900, "available": false}'})
+        out = c.Findings()
+        c.check_gear([{"id": "g", "name": "Gloves", "brand": "Fox", "shop": "99 Bikes", "price_aud": "29",
+                       "shop_url": "https://99bikes.com.au/products/gloves"}], TODAY, out)
+        self.assertEqual(out.items, [])
+
     def test_same_price_is_quiet(self):
         c.fetch = FakeWeb({"x.html": '<meta property="product:price:amount" content="49.99">'})
         out = c.Findings()
@@ -128,6 +142,8 @@ class Gear(unittest.TestCase):
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         routes = {"/old": (301, "/new"), "/temp": (302, "/new"), "/gone": (301, "/")}
+        if self.path == "/bot":
+            self.send_response(400); self.end_headers(); return
         if self.path in routes:
             code, loc = routes[self.path]
             self.send_response(code); self.send_header("Location", loc); self.end_headers(); return
@@ -161,12 +177,50 @@ class Redirects(unittest.TestCase):
     def test_link_kinds(self):
         out = c.Findings()
         c.files_containing = lambda s: ["links.html"]
-        c.check_links([self.base + p for p in ("/old", "/temp", "/gone", "/missing", "/fine")], out)
+        c.check_links([self.base + p for p in ("/old", "/temp", "/gone", "/missing", "/fine", "/bot")], out)
         kinds = sorted(i["kind"] for i in out.items)
         self.assertEqual(kinds, ["link_broken", "link_home", "link_moved"])
         moved = next(i for i in out.items if i["kind"] == "link_moved")
         self.assertEqual(moved["change"], {"op": "replace_text", "files": ["links.html"],
                                            "from": self.base + "/old", "to": self.base + "/new"})
+
+
+class AutoFix(unittest.TestCase):
+    def setUp(self):
+        import tempfile, pathlib
+        self.dir = pathlib.Path(tempfile.mkdtemp())
+        self.old_root = c.ROOT
+        c.ROOT = self.dir
+        (self.dir / "races.csv").write_text(
+            'id,date,name,summary\njuniors,2026-12-06,Juniors Day,"Fun, for kids."\nother,2027-01-01,Other,x\n')
+        (self.dir / "links.html").write_text('<a href="https://old.example/a">x</a>')
+
+    def tearDown(self):
+        c.ROOT = self.old_root
+
+    def test_safe_ones_are_fixed_and_others_wait(self):
+        now = dt.datetime(2026, 11, 24, 9, 0, tzinfo=c.ADELAIDE)
+        items = [
+            {"id": "a", "kind": "race_date", "group": "calendar", "title": "moved",
+             "change": {"op": "csv_set", "file": "races.csv", "key": "id", "value": "juniors",
+                        "expect": {"date": "2026-12-06"}, "set": {"date": "2026-12-13"}}},
+            {"id": "b", "kind": "link_moved", "group": "links", "title": "link",
+             "change": {"op": "replace_text", "files": ["links.html"], "from": "https://old.example/a", "to": "https://new.example/a"}},
+            {"id": "c", "kind": "race_new", "group": "calendar", "title": "new",
+             "change": {"op": "csv_append", "file": "races.csv", "row": {"id": "n"}}},
+            {"id": "d", "kind": "race_date", "group": "calendar", "title": "stale",
+             "change": {"op": "csv_set", "file": "races.csv", "key": "id", "value": "other",
+                        "expect": {"date": "2099-01-01"}, "set": {"date": "2027-02-02"}}},
+        ]
+        fixed, rest = c.auto_fix(items, now)
+        self.assertEqual([f["id"] for f in fixed], ["a", "b"])
+        self.assertEqual([r["id"] for r in rest], ["c", "d"])
+        self.assertEqual((self.dir / "races.csv").read_text(),
+                         'id,date,name,summary\njuniors,2026-12-13,Juniors Day,"Fun, for kids."\nother,2027-01-01,Other,x\n')
+        self.assertEqual((self.dir / "links.html").read_text(), '<a href="https://new.example/a">x</a>')
+
+    def test_bad_file_names_are_refused(self):
+        self.assertEqual(c.apply_change({"op": "replace_text", "files": ["../x.html"], "from": "a", "to": "b"}), [])
 
 
 class Clock(unittest.TestCase):

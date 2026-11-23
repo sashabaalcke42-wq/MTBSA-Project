@@ -3,7 +3,11 @@
 # Every morning at 9 AM Adelaide time this checks the race calendars, gear
 # prices and links the site relies on. It saves a list of suggested changes
 # to the "site-check-data" branch, and the private stats dashboard shows that
-# list with Add and Dismiss buttons. Nothing on the site changes by itself.
+# list with Add and Dismiss buttons.
+#
+# Safe fixes are made automatically and saved to main: race dates that the
+# organiser changed, links that moved for good, and exact shop prices. New
+# races and anything that needs a decision wait on the dashboard.
 #
 # It's free: it only uses GitHub's built-in Actions and the free GITHUB_TOKEN.
 #
@@ -24,7 +28,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # only to save results on the site-check-data branch
+  contents: write   # to save the safe fixes to main and results to site-check-data
 
 concurrency:
   group: daily-site-check
@@ -59,7 +63,26 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           SCHEDULE: ${{ github.event.schedule }}
-        run: python3 .github/site-check/check.py --out data/results.json --decisions data/decisions.json
+        run: >
+          python3 .github/site-check/check.py --auto-fix
+          --out data/results.json --decisions data/decisions.json
+          --commit-message "$RUNNER_TEMP/fixes.txt"
+
+      - name: Save the automatic fixes to the website
+        if: steps.check.outputs.skipped != 'true'
+        run: |
+          [ -f "$RUNNER_TEMP/fixes.txt" ] || { echo "Nothing to fix automatically"; exit 0; }
+          cat "$RUNNER_TEMP/fixes.txt"
+          git config user.name "MTB SA site check"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -u  # only files already on the site
+          git commit -qF "$RUNNER_TEMP/fixes.txt"
+          for i in 1 2 3 4; do
+            git push origin HEAD:main && exit 0
+            git pull --rebase origin main || { git rebase --abort; exit 1; }
+            sleep $((i * 5))
+          done
+          exit 1
 
       - name: Save results for the dashboard
         if: steps.check.outputs.skipped != 'true'
