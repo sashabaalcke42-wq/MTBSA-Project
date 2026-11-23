@@ -1,21 +1,26 @@
 """Daily site check for mtbsa.com.au.
 
-Looks at the race calendars and links the site uses and reports anything
-that has changed or broken in one GitHub issue ("Daily site check").
-It never edits the site. Standard library only, so it needs nothing installed.
+Looks at the race calendars, gear shops and links the site uses, and writes a
+list of suggested changes to a JSON file. The private stats dashboard shows
+that list with "Add" and "Dismiss" buttons. Nothing on the site changes until
+a suggestion is added there.
 
-Run locally with:  python3 .github/site-check/check.py --dry-run
+Standard library only, so it needs nothing installed.
+
+  python3 .github/site-check/check.py --dry-run            # print, write nothing
+  python3 .github/site-check/check.py --out results.json --decisions decisions.json
 """
 
-import csv
+import argparse
 import concurrent.futures
+import csv
 import datetime as dt
 import hashlib
 import html
+import io
 import json
 import os
 import re
-import sys
 import time
 import urllib.error
 import urllib.parse
@@ -27,72 +32,96 @@ ROOT = Path(__file__).resolve().parents[2]
 ADELAIDE = ZoneInfo("Australia/Adelaide")
 UA = ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
       "Chrome/124.0 Safari/537.36 mtbsa-daily-site-check")
-LABEL = "daily-site-check"
-ISSUE_TITLE = "Daily site check"
 
-# Calendars always watched, on top of any found in the site's files.
-EXTRA_CALENDARS = [
-    "https://entryboss.cc/calendar/ambc",
-    "https://entryboss.cc/calendar/gesa",
-    "https://entryboss.cc/calendar/insideline",
-]
+# Club calendars always watched, on top of any found in the site's files.
+CALENDARS = {
+    "ambc": "Adelaide Mountain Bike Club",
+    "gesa": "Gravity Enduro SA",
+    "insideline": "Inside Line MTB Club",
+}
 AUSCYCLING_SA = "https://auscycling.org.au/events?state=sa"
 MTB_WORDS = re.compile(
-    r"mtb|mountain|enduro|downhill|gravity|xco|xcc|xcm|cross-country|"
-    r"marathon|dirt|trail|dh-|-dh|e-mtb|pump", re.I)
+    r"mtb|mountain|enduro|downhill|gravity|xco|xcc|xcm|cross-country|marathon|"
+    r"dirt|trail|e-mtb|pump", re.I)
+CANCELLED = re.compile(r"cancel|postpon", re.I)
 
 # Hosts that aren't pages people click (fonts, analytics, schema markup).
-SKIP_HOSTS = {
-    "fonts.googleapis.com", "fonts.gstatic.com", "schema.org", "www.w3.org",
-    "gc.zgo.at",
-}
+SKIP_HOSTS = {"fonts.googleapis.com", "fonts.gstatic.com", "schema.org",
+              "www.w3.org", "gc.zgo.at"}
 SKIP_HOST_SUFFIXES = (".posthog.com", ".goatcounter.com")
-
 URL_RE = re.compile(r"https?://[^\s\"'<>()`,]+")
 SCAN_GLOBS = ["*.html", "*.csv", "*.js"]
 
 
-# ---------------------------------------------------------------- helpers
+# ---------------------------------------------------------------- fetching
 
-def fetch(url, timeout=25, method="GET"):
-    """Returns (status, final_url, text). status 0 means it didn't load."""
-    req = urllib.request.Request(url, method=method, headers={
-        "User-Agent": UA,
-        "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
-        "Accept-Language": "en-AU,en;q=0.9",
-    })
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as r:
-            body = r.read(3_000_000) if method == "GET" else b""
-            return r.status, r.geturl(), body.decode("utf-8", "replace")
-    except urllib.error.HTTPError as e:
-        return e.code, url, ""
-    except Exception as e:  # DNS, timeout, TLS, reset
-        return 0, url, f"{type(e).__name__}: {e}"
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    """Lets fetch() follow redirects itself, so it knows if a page moved for good."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
 
 
-def load_ignore():
-    p = ROOT / ".github/site-check/ignore.txt"
-    items = set()
-    if p.exists():
-        for line in p.read_text(encoding="utf-8").splitlines():
-            line = line.split("#", 1)[0].strip()
-            if line:
-                items.add(line.rstrip("/"))
-    return items
+_opener = urllib.request.build_opener(_NoRedirects)
+
+
+class Page:
+    def __init__(self, status, url, final, text="", codes=()):
+        self.status, self.url, self.final, self.text = status, url, final, text
+        self.codes = list(codes)
+        self.permanent = bool(codes) and all(c in (301, 308) for c in codes)
+
+
+def fetch(url, timeout=25):
+    """Returns a Page. status 0 means it didn't load at all."""
+    codes, current = [], url
+    for _ in range(8):
+        req = urllib.request.Request(current, headers={
+            "User-Agent": UA,
+            "Accept": "text/html,application/xhtml+xml,application/json,*/*;q=0.8",
+            "Accept-Language": "en-AU,en;q=0.9",
+        })
+        try:
+            with _opener.open(req, timeout=timeout) as r:
+                body = r.read(3_000_000).decode("utf-8", "replace")
+                return Page(r.status, url, current, body, codes)
+        except urllib.error.HTTPError as e:
+            loc = e.headers.get("Location") if e.code in (301, 302, 303, 307, 308) else None
+            if not loc:
+                return Page(e.code, url, current, codes=codes)
+            codes.append(e.code)
+            current = urllib.parse.urljoin(current, loc)
+        except Exception as e:  # DNS, timeout, TLS, reset
+            return Page(0, url, current, f"{type(e).__name__}: {e}", codes)
+    return Page(0, url, current, "Too many redirects", codes)
+
+
+def fetch_retry(url):
+    p = fetch(url)
+    if p.status in (0, 500, 502, 503, 504):
+        time.sleep(8)
+        p = fetch(url)
+    return p
+
+
+# ---------------------------------------------------------------- site data
+
+def read_csv(name):
+    with open(ROOT / name, encoding="utf-8-sig", newline="") as f:
+        return list(csv.DictReader(f))
+
+
+def site_files():
+    for g in SCAN_GLOBS:
+        yield from sorted(ROOT.glob(g))
 
 
 def site_text():
-    out = []
-    for g in SCAN_GLOBS:
-        for f in sorted(ROOT.glob(g)):
-            out.append(f.read_text(encoding="utf-8", errors="replace"))
-    return "\n".join(out)
+    return "\n".join(f.read_text(encoding="utf-8", errors="replace") for f in site_files())
 
 
-def load_races():
-    with open(ROOT / "races.csv", encoding="utf-8-sig", newline="") as f:
-        return list(csv.DictReader(f))
+def files_containing(s):
+    return [f.name for f in site_files() if s in f.read_text(encoding="utf-8", errors="replace")]
 
 
 def entryboss_id(url):
@@ -105,8 +134,7 @@ def parse_day(text):
     if not m:
         return None
     try:
-        return dt.datetime.strptime(f"{m.group(1)} {m.group(2)} {m.group(3)}",
-                                    "%d %b %Y").date()
+        return dt.datetime.strptime(" ".join(m.groups()), "%d %b %Y").date()
     except ValueError:
         return None
 
@@ -115,128 +143,290 @@ def nice(d):
     return d.strftime("%a %-d %b %Y") if d else "?"
 
 
-# ---------------------------------------------------------------- checks
+def to_date(s):
+    try:
+        return dt.date.fromisoformat((s or "").strip())
+    except ValueError:
+        return None
 
-def check_calendars(races, text, today, ignore):
-    """Compares EntryBoss calendars with races.csv."""
-    by_id = {}
+
+def slug(s):
+    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:60]
+
+
+# ---------------------------------------------------------------- suggestions
+
+class Findings:
+    def __init__(self):
+        self.items = []
+
+    def add(self, kind, group, title, detail="", url="", change=None, key=None):
+        # The id stays the same while the suggestion is the same, so a dismissed
+        # one stays dismissed. If the details change (a race moves again), it's new.
+        sid = kind + "-" + hashlib.sha1(
+            json.dumps([kind, key or title, change], sort_keys=True).encode()
+        ).hexdigest()[:12]
+        if any(i["id"] == sid for i in self.items):
+            return
+        self.items.append({"id": sid, "kind": kind, "group": group, "title": title,
+                           "detail": detail, "url": url, "change": change})
+
+
+def guess_type(name, cal):
+    n = name.lower()
+    if re.search(r"xcm|marathon|\bhour\b", n):
+        return "Marathon"
+    if re.search(r"\bxc|short track|cross", n):
+        return "Cross-country"
+    if re.search(r"enduro|gesa", n) or cal == "gesa":
+        return "Enduro"
+    if re.search(r"\bdh\b|downhill|descent", n) or cal == "insideline":
+        return "Downhill"
+    return "See entry page"
+
+
+def guess_level(name, cal):
+    n = name.lower()
+    if "national" in n:
+        return "National"
+    if "state" in n or "champs" in n or "championship" in n or cal == "gesa":
+        return "State"
+    if "first descent" in n or "junior" in n or "beginner" in n or "come and try" in n:
+        return "Beginner"
+    return "Club"
+
+
+def new_race_row(races, name, day, venue, organiser, organiser_url, entry_url, level, rtype):
+    region = ""
     for r in races:
-        rid = entryboss_id(r.get("entry_url"))
-        if rid:
-            by_id[rid] = r
+        v = r.get("venue", "").split("(")[0].strip().lower()
+        if v and v != "see entry page" and v in (venue or "").lower():
+            region = r["region"]
+            break
+    base = slug(f"{name}-{day.year}") or f"race-{day.isoformat()}"
+    ids = {r["id"] for r in races}
+    rid, n = base, 2
+    while rid in ids:
+        rid, n = f"{base}-{n}", n + 1
+    what = f"{rtype} race" if rtype != "See entry page" else "Race"
+    return {
+        "id": rid, "date": day.isoformat(), "end_date": "", "name": name,
+        "level": level, "type": rtype, "venue": venue or "See entry page",
+        "region": region or "South Australia", "organiser": organiser,
+        "organiser_url": organiser_url, "ages": "All ages", "cost": "See entry page",
+        "licence": "AusCycling membership",
+        "summary": f"{what} run by {organiser}. Check the entry page for categories and times.",
+        "entry_url": entry_url,
+    }
 
-    cals = set(EXTRA_CALENDARS)
-    cals.update(u.rstrip("/") for u in re.findall(
-        r"https://entryboss\.cc/calendar/[a-z0-9_-]+", text))
 
-    new, moved, problems = [], [], []
-    row_re = re.compile(
-        r'fixture-date">\s*(.*?)\s*</div>.*?href="/races/(\d+)"[^>]*>(.*?)</a>',
-        re.S)
+ROW_RE = re.compile(
+    r'fixture-date">\s*(.*?)\s*</div>.*?href="/races/(\d+)"[^>]*>(.*?)</a>'
+    r'(?:\s*</div>\s*<div[^>]*fixture-course[^>]*>(.*?)</div>)?', re.S)
+
+
+def check_calendars(races, text, today, out):
+    by_id = {entryboss_id(r.get("entry_url")): r for r in races if entryboss_id(r.get("entry_url"))}
+    cals = set(CALENDARS)
+    cals.update(re.findall(r"https://entryboss\.cc/calendar/([a-z0-9_-]+)", text))
     for cal in sorted(cals):
-        status, _, body = fetch(cal)
-        rows = row_re.findall(body) if status == 200 else []
+        cal_url = f"https://entryboss.cc/calendar/{cal}"
+        page = fetch_retry(cal_url)
+        rows = ROW_RE.findall(page.text) if page.status == 200 else []
         if not rows:
-            problems.append(f"Couldn't read the calendar at {cal} today "
-                            f"(status {status or 'no answer'}). "
-                            "If this keeps happening the page may have changed.")
+            out.add("source", "sources", f"Couldn't read the {cal} race calendar today",
+                    "If this shows up a few days in a row, the page may have changed and "
+                    "the check needs a tweak.", cal_url, key=f"{cal}:{today}")
             continue
-        for date_txt, rid, name in rows:
+        org = CALENDARS.get(cal) or next(
+            (r["organiser"] for r in races if r.get("organiser_url", "").rstrip("/") == cal_url), cal)
+        for date_txt, rid, name, course in rows:
             day = parse_day(html.unescape(date_txt))
             name = html.unescape(re.sub(r"<[^>]+>", "", name)).strip()
+            course = html.unescape(re.sub(r"<[^>]+>", "", course or "")).strip()
             url = f"https://entryboss.cc/races/{rid}"
-            if rid in ignore or url in ignore:
-                continue
-            if rid in by_id:
-                ours = by_id[rid]
-                try:
-                    our_day = dt.date.fromisoformat(ours["date"])
-                except ValueError:
-                    our_day = None
-                upcoming = (day and day >= today) or (our_day and our_day >= today)
+            ours = by_id.get(rid)
+            if ours:
+                our_day = to_date(ours["date"])
+                upcoming = bool((day and day >= today) or (our_day and our_day >= today))
                 if day and our_day and day != our_day and upcoming:
-                    moved.append(
-                        f"**{ours['name']}** is now on **{nice(day)}** "
-                        f"(the site says {nice(our_day)}). [Entry page]({url})")
-            elif day and day >= today:
-                new.append(f"**{name}** on {nice(day)}, listed on "
-                           f"[{cal.split('/')[-1]}]({cal}). [Entry page]({url})")
-    return new, moved, problems
+                    change = {"op": "csv_set", "file": "races.csv", "key": "id", "value": ours["id"],
+                              "expect": {"date": ours["date"]}, "set": {"date": day.isoformat()}}
+                    end = to_date(ours.get("end_date"))
+                    if end:
+                        change["set"]["end_date"] = (end + (day - our_day)).isoformat()
+                    out.add("race_date", "calendar", f"{ours['name']} has moved to {nice(day)}",
+                            f"The site says {nice(our_day)}. The organiser's calendar now says {nice(day)}.",
+                            url, change)
+                if upcoming and CANCELLED.search(name) and not CANCELLED.search(ours["name"]):
+                    out.add("race_cancelled", "calendar", f"{ours['name']} may be cancelled or postponed",
+                            f"The organiser's calendar now calls it \"{name}\". Have a look and "
+                            "ask Claude to update or remove it.", url, key=rid + name)
+            elif day and day >= today and not CANCELLED.search(name):
+                row = new_race_row(races, name, day, course, org, cal_url, url,
+                                   guess_level(name, cal), guess_type(name, cal))
+                out.add("race_new", "calendar", f"New race: {name} on {nice(day)}",
+                        f"On the {org} calendar but not on the site yet. Check the details "
+                        "before adding.", url,
+                        {"op": "csv_append", "file": "races.csv", "row": row}, key=rid)
 
 
 AC_DATE = re.compile(
-    r"\b([A-Z][a-z]{2}) (\d{1,2})(?:\s*[\u2013-]\s*(?:[A-Z][a-z]{2} )?\d{1,2})?, (\d{4})\b")
+    r"\b([A-Z][a-z]{2}) (\d{1,2})(?:\s*[–-]\s*(?:([A-Z][a-z]{2}) )?(\d{1,2}))?, (\d{4})\b")
 
 
-def check_auscycling_dates(races, today, ignore):
-    """For races whose entry link is an AusCycling event page, checks the date."""
-    moved, problems = [], []
+def auscycling_page(url):
+    """Returns (title, start, end) from an AusCycling event page, or None."""
+    p = fetch_retry(url)
+    if p.status != 200:
+        return None
+    body = re.sub(r"<script.*?</script>|<style.*?</style>", " ", p.text, flags=re.S)
+    title = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
+    title = html.unescape(re.sub(r"<[^>]+>", "", title.group(1))).strip() if title else ""
+    m = AC_DATE.search(html.unescape(re.sub(r"<[^>]+>", " ", body)))
+    if not m:
+        return title, None, None
+    mon, d1, mon2, d2, yr = m.groups()
+    try:
+        start = dt.datetime.strptime(f"{mon} {d1} {yr}", "%b %d %Y").date()
+        end = dt.datetime.strptime(f"{mon2 or mon} {d2} {yr}", "%b %d %Y").date() if d2 else None
+    except ValueError:
+        return title, None, None
+    return title, start, end
+
+
+def check_auscycling(races, text, today, out):
     for r in races:
         url = (r.get("entry_url") or "").strip()
-        if "auscycling.org.au/events/" not in url or url.rstrip("/") in ignore:
+        our_day = to_date(r["date"])
+        if "auscycling.org.au/events/" not in url or not our_day or our_day < today:
             continue
-        try:
-            our_day = dt.date.fromisoformat(r["date"])
-        except ValueError:
-            continue
-        if our_day < today:
-            continue
-        status, _, body = fetch(url)
-        if status != 200:
+        got = auscycling_page(url)
+        if not got:
             continue  # the link check reports broken pages
-        page = re.sub(r"<script.*?</script>|<style.*?</style>", " ", body, flags=re.S)
-        page = html.unescape(re.sub(r"<[^>]+>", " ", page))
-        m = AC_DATE.search(page)
-        if not m:
-            problems.append(f"Couldn't find the date on {url} today.")
-            continue
-        try:
-            day = dt.datetime.strptime(" ".join(m.groups()), "%b %d %Y").date()
-        except ValueError:
-            continue
-        if day != our_day:
-            moved.append(f"**{r['name']}** is now on **{nice(day)}** "
-                         f"(the site says {nice(our_day)}). [Event page]({url})")
-    return moved, problems
+        _, day, end = got
+        if day and day != our_day:
+            change = {"op": "csv_set", "file": "races.csv", "key": "id", "value": r["id"],
+                      "expect": {"date": r["date"]}, "set": {"date": day.isoformat()}}
+            if end:
+                change["set"]["end_date"] = end.isoformat()
+            out.add("race_date", "calendar", f"{r['name']} has moved to {nice(day)}",
+                    f"The site says {nice(our_day)}. AusCycling now says {nice(day)}.", url, change)
 
-
-def check_auscycling(text, today, ignore):
-    status, _, body = fetch(AUSCYCLING_SA)
-    if status != 200 or not body:
-        return [], [f"Couldn't read the AusCycling SA events page today "
-                    f"(status {status or 'no answer'})."]
-    found = []
-    for slug in sorted(set(re.findall(
-            r'href="(?:https://auscycling\.org\.au)?/events/([a-z0-9-]+)"', body))):
-        url = f"https://auscycling.org.au/events/{slug}"
-        if not MTB_WORDS.search(slug) or url in text or url in ignore or slug in ignore:
+    page = fetch_retry(AUSCYCLING_SA)
+    if page.status != 200:
+        out.add("source", "sources", "Couldn't read the AusCycling SA events page today",
+                "If this shows up a few days in a row, the page may have changed.",
+                AUSCYCLING_SA, key=str(today))
+        return
+    slugs = sorted(set(re.findall(
+        r'href="(?:https://auscycling\.org\.au)?/events/([a-z0-9-]+)"', page.text)))
+    for s in slugs:
+        url = f"https://auscycling.org.au/events/{s}"
+        if not MTB_WORDS.search(s) or url in text:
             continue
-        # skip events from years already over
-        years = [int(y) for y in re.findall(r"20\d\d", slug)]
+        years = [int(y) for y in re.findall(r"20\d\d", s)]
         if years and max(years) < today.year:
             continue
-        found.append(f"[{slug.replace('-', ' ')}]({url})")
-    return found, []
+        got = auscycling_page(url)
+        title = (got and got[0]) or s.replace("-", " ").title()
+        day = got[1] if got else None
+        if day and day < today:
+            continue
+        change = None
+        if day:
+            level = "National" if "national" in s else "State"
+            row = new_race_row(races, title, day, "See entry page", "AusCycling",
+                               "https://auscycling.org.au/", url, level, guess_type(title, ""))
+            if got[2]:
+                row["end_date"] = got[2].isoformat()
+            change = {"op": "csv_append", "file": "races.csv", "row": row}
+        out.add("race_new", "calendar",
+                f"New on AusCycling SA: {title}" + (f" on {nice(day)}" if day else ""),
+                "A mountain bike event on AusCycling's SA list that isn't on the site yet. "
+                "It may not be a race, so have a look first.", url, change, key=s)
 
 
-def raw_links():
-    """Every http(s) link in the site's pages, scripts and spreadsheets."""
+# ---------------------------------------------------------------- gear prices
+
+def shop_price(url):
+    """Returns (price, rrp, in_stock) or None if the shop's page can't tell us."""
+    parts = urllib.parse.urlsplit(url)
+    if "/products/" in parts.path:  # Shopify shops publish a small JSON file per product
+        js = urllib.parse.urlunsplit(parts._replace(path=parts.path.rstrip("/") + ".js", query=""))
+        p = fetch_retry(js)
+        if p.status == 200:
+            try:
+                j = json.loads(p.text)
+                price = j["price"] / 100
+                cmp_ = (j.get("compare_at_price") or 0) / 100
+                return price, (cmp_ if cmp_ > price else None), bool(j.get("available", True))
+            except (ValueError, KeyError, TypeError):
+                pass
+    p = fetch_retry(url)
+    if p.status != 200:
+        return None
+    m = (re.search(r'property="product:price:amount"\s+content="([\d.]+)"', p.text)
+         or re.search(r'itemprop="price"\s+content="([\d.]+)"', p.text)
+         or re.search(r'"@type"\s*:\s*"Offer".{0,400}?"price"\s*:\s*"?([\d.]+)', p.text, re.S))
+    if not m:
+        return None
+    stock = not re.search(r'schema\.org/OutOfStock|"availability"\s*:\s*"OutOfStock"', p.text)
+    return float(m.group(1)), None, stock
+
+
+def money(v):
+    return f"${v:,.2f}".replace(".00", "")
+
+
+def same_money(a, b):
+    try:
+        return abs(float(a) - float(b)) < 0.005
+    except (TypeError, ValueError):
+        return False
+
+
+def check_gear(gear, today, out):
+    rows = [g for g in gear if (g.get("shop_url") or "").startswith("http")]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        results = list(pool.map(lambda g: (g, shop_price(g["shop_url"])), rows))
+    for g, got in results:
+        if not got:
+            continue
+        price, rrp, stock = got
+        label = f"{g['brand']} {g['name']}".strip()
+        if not same_money(price, g.get("price_aud")):
+            try:
+                was = money(float(g["price_aud"]))
+            except (TypeError, ValueError):
+                was = "no price"
+            out.add("gear_price", "gear", f"{label} is now {money(price)} at {g['shop']}",
+                    f"The site says {was}." + (f" It's on sale from {money(rrp)}." if rrp else ""),
+                    g["shop_url"],
+                    {"op": "csv_set", "file": "gear.csv", "key": "id", "value": g["id"],
+                     "expect": {"price_aud": g["price_aud"]},
+                     "set": {"price_aud": f"{price:g}", "rrp_aud": "" if rrp is None else f"{rrp:g}",
+                             "checked": today.isoformat()}})
+        if not stock:
+            out.add("gear_stock", "gear", f"{label} looks sold out at {g['shop']}",
+                    "You might want to point it to another shop or swap it for something similar.",
+                    g["shop_url"], key=g["id"])
+
+
+# ---------------------------------------------------------------- links
+
+def collect_links():
     found = set()
-    for g in SCAN_GLOBS:
-        for f in sorted(ROOT.glob(g)):
-            t = f.read_text(encoding="utf-8", errors="replace")
-            if f.suffix == ".csv":
-                for row in csv.reader(t.splitlines()):
-                    found.update(c.strip() for c in row if c.strip().startswith("http"))
-            else:
-                found.update(re.findall(r'(?:href|src)="(https?://[^"]+)"', t))
-                found.update(URL_RE.findall(t))
-    return found
-
-
-def collect_links(ignore):
+    for f in site_files():
+        t = f.read_text(encoding="utf-8", errors="replace")
+        if f.suffix == ".csv":
+            for row in csv.reader(io.StringIO(t)):
+                found.update(c.strip() for c in row if c.strip().startswith("http"))
+        else:
+            found.update(re.findall(r'(?:href|src)="(https?://[^"]+)"', t))
+            found.update(URL_RE.findall(t))
     urls = set()
-    for u in raw_links():
+    for u in found:
         u = html.unescape(u).rstrip(".,;:'\"")
         parts = urllib.parse.urlsplit(u)
         host = parts.hostname or ""
@@ -244,120 +434,44 @@ def collect_links(ignore):
             continue
         if "google." in host and parts.path.startswith("/maps"):
             continue  # map searches always load
-        if "#" in u or "{" in u or "$" in u or not parts.path and host.endswith("posthog.com"):
+        if "#" in u or "{" in u or "$" in u:
             continue
-        if host.endswith("mtbsa.com.au") and parts.path.endswith(
-                (".png", ".svg", ".ico", ".pdf")):
-            continue
-        if u.rstrip("/") in ignore:
+        if host.endswith("mtbsa.com.au") and parts.path.endswith((".png", ".svg", ".ico", ".pdf")):
             continue
         urls.add(u)
-    # drop bare-domain duplicates (https://x.com and https://x.com/)
-    return sorted({u for u in urls if not (u + "/") in urls})
+    return sorted(u for u in urls if u + "/" not in urls)
 
 
-def check_one(url):
-    status, final, _ = fetch(url)
-    if status in (0, 500, 502, 503, 504):
-        time.sleep(8)
-        status, final, _ = fetch(url)
-    return url, status, final
-
-
-def check_links(urls):
-    broken, homepage, blocked = [], [], 0
+def check_links(urls, out):
+    blocked = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
-        for url, status, final in pool.map(check_one, urls):
-            if status in (401, 403, 429):  # sites that block robots; not a real break
-                blocked += 1
-            elif status == 0:
-                broken.append(f"{url} (the site didn't answer)")
-            elif status >= 400:
-                why = "page not found" if status in (404, 410) else f"error {status}"
-                broken.append(f"{url} ({why})")
-            else:
-                a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(final)
-                if a.path.strip("/") and not b.path.strip("/"):
-                    homepage.append(f"{url} now just goes to the home page")
-                elif "/products/" in a.path and "/products/" not in b.path:
-                    homepage.append(f"{url} no longer goes to the product "
-                                    f"(now {final})")
-    return broken, homepage, blocked
-
-
-# ---------------------------------------------------------------- report
-
-def build_report(f, now, checked, blocked):
-    sections = []
-
-    def sec(title, intro, items):
-        if items:
-            sections.append(f"### {title}\n{intro}\n\n" +
-                            "\n".join(f"- [ ] {i}" for i in items))
-
-    sec("🗓️ Race dates that changed", "These races have moved. Update the date in `races.csv`.",
-        f["moved"])
-    sec("🆕 New races not on the site yet", "These are on the organisers' calendars but not in `races.csv`.",
-        f["new"])
-    sec("🆕 Possible new MTB events on AusCycling (SA)",
-        "These might be worth adding. Some may not be mountain bike races.", f["auscycling"])
-    sec("🔗 Broken links", "These links didn't work today.", f["broken"])
-    sec("↪️ Links that now go somewhere else", "Worth a quick look.", f["moved_links"])
-    sec("⚠️ Couldn't check", "Not necessarily a problem, just a heads up.", f["problems"])
-
-    head = (f"Checked on **{now:%A %-d %B %Y, %-I:%M %p}** Adelaide time "
-            f"({checked} links).\n\n")
-    foot = ("\n\n---\n**What to do:** tick things off as you fix them, or ask Claude "
-            "in the project to \"apply today's site check\". To stop something being "
-            "flagged again, add its link to `.github/site-check/ignore.txt`.\n\n"
-            "This issue updates itself each morning and closes when everything is clear.")
-    if blocked:
-        foot += (f"\n\n_{blocked} link(s) block automatic checks, so they were skipped._")
-    return head + "\n\n".join(sections) + foot
-
-
-def gh(method, path, data=None):
-    token = os.environ["GITHUB_TOKEN"]
-    url = f"https://api.github.com/repos/{os.environ['GITHUB_REPOSITORY']}{path}"
-    req = urllib.request.Request(
-        url, method=method,
-        data=json.dumps(data).encode() if data is not None else None,
-        headers={"Authorization": f"Bearer {token}",
-                 "Accept": "application/vnd.github+json",
-                 "X-GitHub-Api-Version": "2022-11-28",
-                 "User-Agent": "mtbsa-daily-site-check"})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read() or b"null")
-
-
-def publish(body, fingerprint, anything):
-    marker = f"<!-- fingerprint:{fingerprint} -->"
-    open_issues = [i for i in gh("GET", f"/issues?state=open&labels={LABEL}&per_page=10")
-                   if "pull_request" not in i]
-    issue = open_issues[0] if open_issues else None
-
-    if not anything:
-        if issue:
-            gh("POST", f"/issues/{issue['number']}/comments",
-               {"body": "✅ All clear this morning. Closing this until something changes."})
-            gh("PATCH", f"/issues/{issue['number']}",
-               {"state": "closed", "state_reason": "completed"})
-            print(f"All clear, closed #{issue['number']}")
-        else:
-            print("All clear, nothing to report")
-        return
-
-    full = body + "\n" + marker
-    if not issue:
-        new = gh("POST", "/issues", {"title": ISSUE_TITLE, "body": full, "labels": [LABEL]})
-        print(f"Opened #{new['number']}")
-    elif marker in (issue.get("body") or ""):
-        print(f"No change since last time (#{issue['number']})")
-    else:
-        gh("PATCH", f"/issues/{issue['number']}", {"body": full})
-        gh("POST", f"/issues/{issue['number']}/comments",
-           {"body": "🔔 Something new turned up this morning. The list above is updated."})
-        print(f"Updated #{issue['number']}")
+        pages = list(pool.map(fetch_retry, urls))
+    for p in pages:
+        url = p.url
+        a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(p.final)
+        used = ", ".join(files_containing(url)) or "the site"
+        if p.status in (401, 403, 429):  # sites that block robots; not a real break
+            blocked += 1
+        elif p.status == 0 or p.status >= 400:
+            why = ("the site didn't answer" if p.status == 0 else
+                   "page not found" if p.status in (404, 410) else f"error {p.status}")
+            out.add("link_broken", "links", f"Broken link: {url}",
+                    f"It didn't work today ({why}). It's used in {used}.", url, key=url)
+        elif a.path.strip("/") and not b.path.strip("/"):
+            out.add("link_home", "links", f"Link now goes to a home page: {url}",
+                    f"It now ends up at {p.final}, so the page it pointed to has probably gone. "
+                    f"It's used in {used}.", url, key=url)
+        elif "/products/" in a.path and "/products/" not in b.path:
+            out.add("link_home", "links", f"Shop link no longer goes to the product: {url}",
+                    f"It now ends up at {p.final}. It's used in {used}.", url, key=url)
+        elif p.permanent and p.final.rstrip("/") != url.rstrip("/") and b.hostname:
+            files = files_containing(url)
+            if files:
+                out.add("link_moved", "links", f"Link has moved: {url}",
+                        f"It now lives at {p.final}. Adding swaps the old address for the new one "
+                        f"in {', '.join(files)}.", p.final,
+                        {"op": "replace_text", "files": files, "from": url, "to": p.final})
+    return blocked
 
 
 # ---------------------------------------------------------------- main
@@ -371,37 +485,57 @@ def right_time(now):
     return want is None or want == offset
 
 
+def run(today, decided):
+    races, gear, text = read_csv("races.csv"), read_csv("gear.csv"), site_text()
+    out = Findings()
+    check_calendars(races, text, today, out)
+    check_auscycling(races, text, today, out)
+    check_gear(gear, today, out)
+    links = collect_links()
+    blocked = check_links(links, out)
+    order = {"calendar": 0, "gear": 1, "links": 2, "sources": 3}
+    suggestions = sorted((s for s in out.items if s["id"] not in decided),
+                         key=lambda s: (order.get(s["group"], 9), s["title"]))
+    return suggestions, {"links": len(links), "blocked": blocked,
+                         "races": len(races), "gear": len(gear)}
+
+
 def main():
-    dry = "--dry-run" in sys.argv
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", help="where to write results.json")
+    ap.add_argument("--decisions", help="decisions.json from the dashboard (added/dismissed)")
+    ap.add_argument("--dry-run", action="store_true")
+    args = ap.parse_args()
+
     now = dt.datetime.now(ADELAIDE)
     if not right_time(now):
         print(f"Not 9 AM in Adelaide on this schedule ({now:%H:%M %Z}), skipping.")
+        if os.environ.get("GITHUB_OUTPUT"):
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write("skipped=true\n")
         return
-    today = now.date()
-    ignore = load_ignore()
-    text = site_text()
-    races = load_races()
 
-    new, moved, problems = check_calendars(races, text, today, ignore)
-    moved2, p3 = check_auscycling_dates(races, today, ignore)
-    moved += moved2
-    problems += p3
-    ausc, p2 = check_auscycling(text, today, ignore)
-    links = collect_links(ignore)
-    broken, moved_links, blocked = check_links(links)
+    decided = {}
+    if args.decisions and Path(args.decisions).exists():
+        try:
+            decided = json.loads(Path(args.decisions).read_text()).get("decisions", {})
+        except ValueError:
+            decided = {}
 
-    f = {"moved": moved, "new": new, "auscycling": ausc, "broken": broken,
-         "moved_links": moved_links, "problems": problems + p2}
-    # "Couldn't check" items open the issue too (so a silent failure gets
-    # noticed), but don't count as "something new" for the daily ping.
-    anything = any(f.values())
-    fingerprint = hashlib.sha1(json.dumps(
-        {k: sorted(v) for k, v in f.items() if k != "problems"}).encode()).hexdigest()[:12]
-    body = build_report(f, now, len(links), blocked)
-
-    print(body)
-    if not dry:
-        publish(body, fingerprint, anything)
+    suggestions, checked = run(now.date(), decided)
+    result = {
+        "generated": now.isoformat(timespec="seconds"),
+        "generated_text": now.strftime("%A %-d %B %Y, %-I:%M %p"),
+        "checked": checked,
+        "suggestions": suggestions,
+    }
+    for s in suggestions:
+        print(f"[{s['group']}] {s['title']}")
+    print(f"{len(suggestions)} suggestion(s), {checked['links']} links checked, "
+          f"{checked['blocked']} skipped because they block robots.")
+    if args.out and not args.dry_run:
+        Path(args.out).write_text(json.dumps(result, indent=1, ensure_ascii=False) + "\n",
+                                  encoding="utf-8")
 
 
 if __name__ == "__main__":
