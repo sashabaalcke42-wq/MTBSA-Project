@@ -117,6 +117,20 @@ class Gear(unittest.TestCase):
                        "shop_url": "https://99bikes.com.au/products/gloves"}], TODAY, out)
         self.assertEqual(out.items[0]["change"]["set"], {"price_aud": "24.99", "rrp_aud": "34.99", "checked": "2026-11-24"})
 
+    def test_other_shops_are_skipped(self):
+        c.fetch = FakeWeb({"x.html": '<meta property="product:price:amount" content="44.99">'})
+        out = c.Findings()
+        c.check_gear([{"id": "g", "name": "Grips", "brand": "ODI", "shop": "Pushys", "price_aud": "49.99",
+                       "shop_url": "https://www.pushys.com.au/x.html"}], TODAY, out)
+        self.assertEqual(out.items, [])
+
+    def test_sold_out_is_not_reported(self):
+        c.fetch = FakeWeb({"gloves.js": '{"price": 2900, "available": false}'})
+        out = c.Findings()
+        c.check_gear([{"id": "g", "name": "Gloves", "brand": "Fox", "shop": "99 Bikes", "price_aud": "29",
+                       "shop_url": "https://99bikes.com.au/products/gloves"}], TODAY, out)
+        self.assertEqual(out.items, [])
+
     def test_same_price_is_quiet(self):
         c.fetch = FakeWeb({"x.html": '<meta property="product:price:amount" content="49.99">'})
         out = c.Findings()
@@ -128,6 +142,8 @@ class Gear(unittest.TestCase):
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         routes = {"/old": (301, "/new"), "/temp": (302, "/new"), "/gone": (301, "/")}
+        if self.path == "/bot":
+            self.send_response(400); self.end_headers(); return
         if self.path in routes:
             code, loc = routes[self.path]
             self.send_response(code); self.send_header("Location", loc); self.end_headers(); return
@@ -161,7 +177,7 @@ class Redirects(unittest.TestCase):
     def test_link_kinds(self):
         out = c.Findings()
         c.files_containing = lambda s: ["links.html"]
-        c.check_links([self.base + p for p in ("/old", "/temp", "/gone", "/missing", "/fine")], out)
+        c.check_links([self.base + p for p in ("/old", "/temp", "/gone", "/missing", "/fine", "/bot")], out)
         kinds = sorted(i["kind"] for i in out.items)
         self.assertEqual(kinds, ["link_broken", "link_home", "link_moved"])
         moved = next(i for i in out.items if i["kind"] == "link_moved")

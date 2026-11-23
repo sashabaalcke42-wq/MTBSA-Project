@@ -49,6 +49,8 @@ CANCELLED = re.compile(r"cancel|postpon", re.I)
 SKIP_HOSTS = {"fonts.googleapis.com", "fonts.gstatic.com", "schema.org",
               "www.w3.org", "gc.zgo.at"}
 SKIP_HOST_SUFFIXES = (".posthog.com", ".goatcounter.com")
+# These always turn away automatic visitors, so their links can't be checked.
+BLOCKS_ROBOTS = ("facebook.com", "instagram.com")
 URL_RE = re.compile(r"https?://[^\s\"'<>()`,]+")
 SCAN_GLOBS = ["*.html", "*.csv", "*.js"]
 
@@ -363,16 +365,9 @@ def shop_price(url):
                 return price, (cmp_ if cmp_ > price else None), bool(j.get("available", True))
             except (ValueError, KeyError, TypeError):
                 pass
-    p = fetch_retry(url)
-    if p.status != 200:
-        return None
-    m = (re.search(r'property="product:price:amount"\s+content="([\d.]+)"', p.text)
-         or re.search(r'itemprop="price"\s+content="([\d.]+)"', p.text)
-         or re.search(r'"@type"\s*:\s*"Offer".{0,400}?"price"\s*:\s*"?([\d.]+)', p.text, re.S))
-    if not m:
-        return None
-    stock = not re.search(r'schema\.org/OutOfStock|"availability"\s*:\s*"OutOfStock"', p.text)
-    return float(m.group(1)), None, stock
+    # Other shops' pages often list several prices (other sizes, related
+    # products), so guessing from them gave wrong prices. Skip those.
+    return None
 
 
 def money(v):
@@ -407,10 +402,8 @@ def check_gear(gear, today, out):
                      "expect": {"price_aud": g["price_aud"]},
                      "set": {"price_aud": f"{price:g}", "rrp_aud": "" if rrp is None else f"{rrp:g}",
                              "checked": today.isoformat()}})
-        if not stock:
-            out.add("gear_stock", "gear", f"{label} looks sold out at {g['shop']}",
-                    "You might want to point it to another shop or swap it for something similar.",
-                    g["shop_url"], key=g["id"])
+        # Stock isn't reported: shops often show "sold out" online for things
+        # that are in their stores, so it gave too many false alarms.
 
 
 # ---------------------------------------------------------------- links
@@ -450,7 +443,9 @@ def check_links(urls, out):
         url = p.url
         a, b = urllib.parse.urlsplit(url), urllib.parse.urlsplit(p.final)
         used = ", ".join(files_containing(url)) or "the site"
-        if p.status in (401, 403, 429):  # sites that block robots; not a real break
+        host = (a.hostname or "").lower()
+        if p.status in (400, 401, 403, 429) or host.endswith(BLOCKS_ROBOTS):
+            # Sites that turn away automatic checks; not a real break.
             blocked += 1
         elif p.status == 0 or p.status >= 400:
             why = ("the site didn't answer" if p.status == 0 else
