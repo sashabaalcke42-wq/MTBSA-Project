@@ -1,0 +1,79 @@
+# Daily site check
+#
+# Every morning at 9 AM Adelaide time this checks the race calendars, gear
+# prices and links the site relies on. It saves a list of suggested changes
+# to the "site-check-data" branch, and the private stats dashboard shows that
+# list with Add and Dismiss buttons. Nothing on the site changes by itself.
+#
+# It's free: it only uses GitHub's built-in Actions and the free GITHUB_TOKEN.
+#
+# Why two times? GitHub runs schedules in UTC, and Adelaide moves between
+# UTC+10:30 (daylight saving) and UTC+9:30. Both times are booked, and the
+# script only does the check on the one that is really 9 AM in Adelaide.
+#   22:30 UTC = 9:00 AM ACDT (summer, roughly Oct to Apr)
+#   23:30 UTC = 9:00 AM ACST (winter, roughly Apr to Oct)
+#
+# To run it now: Actions tab > Daily site check > Run workflow.
+
+name: Daily site check
+
+on:
+  schedule:
+    - cron: "30 22 * * *"
+    - cron: "30 23 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # only to save results on the site-check-data branch
+
+concurrency:
+  group: daily-site-check
+  cancel-in-progress: false
+
+env:
+  DATA_BRANCH: site-check-data
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Get the saved results branch
+        run: |
+          if git fetch --depth=1 origin "$DATA_BRANCH"; then
+            git worktree add data FETCH_HEAD
+          else
+            git worktree add --detach data
+            git -C data checkout --orphan "$DATA_BRANCH"
+            git -C data rm -rfq .
+            echo '{"decisions": {}}' > data/decisions.json
+          fi
+
+      - name: Check calendars, gear and links
+        id: check
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: python3 .github/site-check/check.py --out data/results.json --decisions data/decisions.json
+
+      - name: Save results for the dashboard
+        if: steps.check.outputs.skipped != 'true'
+        run: |
+          cd data
+          git config user.name "MTB SA site check"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add results.json decisions.json
+          # [CF-Pages-Skip] stops Cloudflare Pages building this branch.
+          git commit -qm "[CF-Pages-Skip] Daily site check results" || { echo "No changes"; exit 0; }
+          for i in 1 2 3 4; do
+            git push origin "HEAD:refs/heads/$DATA_BRANCH" && exit 0
+            # The dashboard may have saved a decision meanwhile: keep both.
+            git pull --rebase -X theirs origin "$DATA_BRANCH" || true
+            sleep $((i * 5))
+          done
+          exit 1

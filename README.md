@@ -70,6 +70,10 @@ mountainbikingsa.com.au and mountainbikingsouthaustralia.com.au redirect to mtbs
 
 Visits are counted anonymously by GoatCounter (no cookies). Only the account owner can see them, at https://mtbsa.goatcounter.com/ after logging in. The counting script is the `gc.zgo.at/count.js` line at the bottom of each page.
 
+## Daily site check
+
+Every morning at 9 AM Adelaide time a free GitHub Action (`.github/workflows/daily-site-check.yml`) checks the club race calendars and AusCycling against `races.csv`, gear prices against the shops in `gear.csv`, and every link on the site. Its suggestions show in the **Site check** box on the private stats dashboard, where **Add** saves a change straight to `main` and **Dismiss** hides it. The results live on the `site-check-data` branch, which Cloudflare skips. To run a check now: **Actions → Daily site check → Run workflow**.
+
 ## Running it
 
 It's a plain static site with no build step. **Cloudflare Pages** hosts it for free and republishes it within a minute of any change to `main`. In Cloudflare the build settings are: framework **None**, build command **empty**, build output directory **`/`**.
