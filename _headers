@@ -1,0 +1,11 @@
+# Cloudflare Pages reads this file. GitHub Pages ignores it.
+
+# Keep the temporary pages.dev address out of Google, so only mtbsa.com.au shows in search.
+https://:project.pages.dev/*
+  X-Robots-Tag: noindex
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
