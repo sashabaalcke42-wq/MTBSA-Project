@@ -1,0 +1,49 @@
+# Daily site check
+#
+# Every morning at 9 AM Adelaide time this looks at the race calendars and
+# links the site relies on. If anything has changed or broken, it opens (or
+# updates) one GitHub issue called "Daily site check" listing what to look at.
+# Nothing on the site changes by itself: you decide what to update.
+#
+# It's free: it only uses GitHub's built-in Actions and the free GITHUB_TOKEN.
+#
+# Why two times? GitHub runs schedules in UTC, and Adelaide moves between
+# UTC+10:30 (daylight saving) and UTC+9:30. Both times are booked, and the
+# script only does the check on the one that is really 9 AM in Adelaide.
+#   22:30 UTC = 9:00 AM ACDT (summer, roughly Oct to Apr)
+#   23:30 UTC = 9:00 AM ACST (winter, roughly Apr to Oct)
+#
+# To run it now: Actions tab > Daily site check > Run workflow.
+
+name: Daily site check
+
+on:
+  schedule:
+    - cron: "30 22 * * *"
+    - cron: "30 23 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: daily-site-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check calendars and links
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCHEDULE: ${{ github.event.schedule }}
+        run: python3 .github/site-check/check.py

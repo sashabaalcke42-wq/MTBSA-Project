@@ -1,0 +1,5 @@
+# Links or EntryBoss race numbers the daily site check should stop flagging.
+# One per line. Anything after a # is a note and is ignored.
+# Examples:
+#   https://entryboss.cc/races/12345      # not an SA race
+#   https://auscycling.org.au/events/some-event
