@@ -2,8 +2,8 @@
 // Cookieless: no cookies or browser storage, nothing that identifies anyone.
 // The project token below is meant to be public (it can only send stats in).
 (function () {
-  var POSTHOG_TOKEN = '';                         // paste the phc_... project token here
-  var POSTHOG_HOST = 'https://us.i.posthog.com';  // or https://eu.i.posthog.com for EU cloud
+  var POSTHOG_TOKEN = 'phc_CWLJPgoGRSCXsnc2ECFVdktXZ7AJzznW7rvbLtkVeMTn'; // PostHog project token (public)
+  var POSTHOG_HOST = 'https://eu.i.posthog.com';  // EU cloud
 
   if (!POSTHOG_TOKEN) return;
 
