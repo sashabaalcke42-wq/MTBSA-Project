@@ -41,9 +41,12 @@
         '<span class="date-badge lvl-' + lvl + '" aria-hidden="true"><b>' + toDate(r.date).getDate() + '</b><small>' + esc(toDate(r.date).toLocaleDateString('en-AU', { month: 'short' })) + '</small></span>' +
         '<span class="race-body"><span class="race-when">' + esc(fmt.format(toDate(r.date)) + (r.end_date && r.end_date !== r.date ? ' to ' + fmt.format(toDate(r.end_date)) : '')) + '</span>' +
         '<span class="race-name">' + esc(r.name) + '</span>' +
-        '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span></span>' +
+        '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span>' +
+        '<span class="race-cond" data-cond="' + esc(r.id) + '"></span></span>' +
         '<span class="tag lvl-' + lvl + '">' + esc(r.level) + '</span></a></li>';
     }).join('');
+    // Weather and fire chips for races in the next two weeks (weather.js).
+    if (window.RaceWeather) window.RaceWeather.chips(list, next);
   }).catch(() => { list.innerHTML = '<li class="empty">Sorry, races couldn\'t be loaded.</li>'; });
   // Keep the gear number in the banner honest as items get added.
   fetch('gear.csv').then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(text => {
