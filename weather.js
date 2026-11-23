@@ -155,7 +155,12 @@
       const days = {};
       for (let i = 0; i <= 4; i++) {
         const day = dmy(a['ratingdate_' + i]);
-        if (day) days[day] = { rating: a['firedangerrating_' + i] || 'No Rating', ban: /^y/i.test(a['tfb' + i] || '') };
+        if (!day) continue;
+        const now = { rating: a['firedangerrating_' + i] || 'No Rating', ban: /^y/i.test(a['tfb' + i] || '') };
+        // The feed sometimes lists today twice. Keep the worse rating and any fire ban.
+        const had = days[day];
+        if (had) { now.ban = now.ban || had.ban; if (RANK.indexOf(ratingKey(had.rating)) > RANK.indexOf(ratingKey(now.rating))) now.rating = had.rating; }
+        days[day] = now;
       }
       out[name] = days;
     });
@@ -173,6 +178,7 @@
   }
 
   // Fire danger rating colours follow the national system (green, yellow, orange, red).
+  const RANK = ['no', 'moderate', 'high', 'extreme', 'catastrophic'];
   const RATING_CLASS = { moderate: 'fdr-moderate', high: 'fdr-high', extreme: 'fdr-extreme', catastrophic: 'fdr-catastrophic' };
   const ratingKey = s => String(s || '').toLowerCase().split(' ')[0];
   const isBad = f => f && (f.ban || ['extreme', 'catastrophic'].includes(ratingKey(f.rating)));
