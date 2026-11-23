@@ -151,9 +151,12 @@
       badge(r.date, 'lvl-' + levelKey(r.level)) +
       '<span class="race-body"><span class="race-when">' + esc(when(r, fmtShort)) + (isPast(r) ? ' · finished' : '') + '</span>' +
       '<span class="race-name">' + esc(r.name) + '</span>' +
-      '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span></span>' +
+      '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span>' +
+      (isPast(r) ? '' : '<span class="race-cond" data-cond="' + esc(r.id) + '"></span>') + '</span>' +
       tag(r) + '</a></li>';
     }).join('');
+    // Weather and fire chips for races in the next two weeks (weather.js).
+    if (window.RaceWeather) window.RaceWeather.chips(list, items);
   }
 
   // Calendar-style date badge (big day number, short month) for the race lists.
@@ -196,6 +199,7 @@
         '<a class="btn btn-main" href="' + esc(safeUrl(r.entry_url)) + '" target="_blank" rel="noopener">' + (past ? 'Results and info' : 'Enter on the official page') + ' ↗</a>' +
         (past ? '' : '<button class="btn" id="add-cal" type="button">Add to my calendar</button><a class="btn" href="race-day-checklist.html">Race-day checklist</a>') +
       '</div>' +
+      (past ? '' : '<section class="conditions" id="conditions" aria-live="polite"></section>') +
       '<dl class="facts">' +
         row('Where', esc(r.venue === 'See entry page' ? r.region + ' (venue on the entry page)' : r.venue + ', ' + r.region)) +
         row('Race type', esc(r.type)) +
@@ -207,6 +211,7 @@
       '<p class="muted small">Details can change, so check the official page before you go.</p>';
     $('back').addEventListener('click', e => { e.preventDefault(); cameFromCalendar ? history.back() : (location.hash = ''); });
     const b = $('add-cal'); if (b) b.addEventListener('click', () => downloadICS(r));
+    if (!past && window.RaceWeather) window.RaceWeather.fill($('conditions'), r);
   }
 
   function route() {

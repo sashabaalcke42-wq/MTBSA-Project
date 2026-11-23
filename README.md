@@ -19,6 +19,8 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `race-day-checklist.html` + `race-day-checklist.pdf` | The packing checklist. If you change the list, ask Claude to remake the PDF too. |
 | `gear.html` + `gear.js` + `gear.csv` | Gear guide with filters for type, skill level, price and brand. Add gear as rows in `gear.csv`. |
 | `icons/`, `favicon.svg`, `site.webmanifest` | The app icon for browser tabs and phone home screens. |
+| `weather.js` | Race-day weather and fire danger on race pages and the race lists. Free, no keys. See below. |
+| `functions/api/fire-danger.js` | A tiny free Cloudflare helper that backs up the fire danger feed if the browser can't reach the CFS directly. |
 | `analytics.js` | Visitor stats with PostHog (no cookies). Feeds the private stats dashboard. The PostHog project token goes at the top. |
 | `style.css` | How everything looks (works in light and dark mode, and on phones). |
 
@@ -36,6 +38,14 @@ Add a row to `races.csv`. The columns are:
 - `entry_url`: the official entry page
 
 Races show on a month calendar, coloured by level. Past races stay in the file and show as finished, so people can see how the season usually runs.
+
+## Race-day weather and fire danger
+
+Each upcoming race page shows the weather forecast (about two weeks out) and the CFS fire danger rating and total fire ban status for its fire ban district (about four days out). Races in the next two weeks also get a small weather chip in the lists, plus a red chip if there's a fire ban or extreme fire danger.
+
+- Weather comes from [Open-Meteo](https://open-meteo.com/), which is free with no account.
+- Fire danger and fire bans come from the SA CFS, which gets them from the Bureau of Meteorology.
+- The site works out where a race is from its venue name (the `VENUES` list in `weather.js`), or from its region if the venue isn't known. If you add a new venue, add a line there. Or add `lat`, `lon` and `fire_district` columns to `races.csv` to pin a race exactly.
 
 ## Adding gear
 
