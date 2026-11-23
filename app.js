@@ -221,6 +221,34 @@
     else { detailView.hidden = true; calView.hidden = false; cameFromCalendar = true; }
   }
 
+  // ---- Search engines ----
+  // Lists upcoming races in a format Google understands, so they can show up as events in search.
+  function addEventData() {
+    const today = new Date().toISOString().slice(0, 10);
+    const events = races.filter(r => (r.end_date || r.date) >= today).map(r => {
+      const e = {
+        '@type': 'SportsEvent',
+        name: r.name,
+        sport: 'Mountain biking',
+        startDate: r.date,
+        endDate: r.end_date || r.date,
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: { '@type': 'Place', name: r.venue, address: { '@type': 'PostalAddress', addressLocality: r.region, addressRegion: 'SA', addressCountry: 'AU' } },
+        url: 'https://mtbsa.com.au/calendar#race/' + encodeURIComponent(r.id)
+      };
+      if (r.summary) e.description = r.summary;
+      if (r.organiser) e.organizer = { '@type': 'Organization', name: r.organiser, url: r.organiser_url || undefined };
+      if (r.entry_url) e.offers = { '@type': 'Offer', url: r.entry_url, availability: 'https://schema.org/InStock' };
+      return e;
+    });
+    if (!events.length) return;
+    const tag = document.createElement('script');
+    tag.type = 'application/ld+json';
+    tag.textContent = JSON.stringify({ '@context': 'https://schema.org', '@graph': events });
+    document.head.appendChild(tag);
+  }
+
   // ---- Start ----
   // "Find a race" glides down to the calendar instead of jumping.
   if ($('find')) $('find').addEventListener('click', e => {
@@ -240,6 +268,7 @@
       races = parseCSV(text).map(r => Object.assign(r, { date: normDate(r.date), end_date: normDate(r.end_date) }))
         .filter(r => r.id && /^\d{4}-\d{2}-\d{2}$/.test(r.date)).sort((a, b) => a.date.localeCompare(b.date));
       drawLevels(); drawMonth(); route();
+      addEventData();
     })
     .catch(() => { list.innerHTML = '<li class="empty">Sorry, the races couldn\'t be loaded. Please try again later.</li>'; });
 })();

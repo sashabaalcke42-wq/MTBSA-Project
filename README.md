@@ -53,9 +53,18 @@ Add a row to `gear.csv`. The columns are:
 
 If you ever use affiliate links, say so clearly on the page.
 
-## When the domain is bought
+## Web address and search
 
-The share-preview tags (`og:url` and `og:image` in each page's `<head>`) use the full GitHub Pages address. Swap that address for the new domain so link previews keep working.
+The site's home is **https://mtbsa.com.au**. Every page's `<head>` already points there:
+
+- `<link rel="canonical">` tells Google the one true address for each page.
+- `og:url` and `og:image` make link previews in Facebook, Messenger and group chats show the picture and title. (Until the domain is live, the picture won't show in previews.)
+- `robots.txt` and `sitemap.xml` tell search engines which pages to read. **If you add a new page, add it to `sitemap.xml` too.**
+- The calendar adds upcoming races in Google's event format, so they can show as events in search.
+- `404.html` is the "page not found" page.
+- `_headers` keeps the temporary `pages.dev` address out of Google and adds some basic safety settings. Only Cloudflare reads it.
+
+mountainbikingsa.com.au and mountainbikingsouthaustralia.com.au redirect to mtbsa.com.au. Those redirects are set in Cloudflare, not in this repo.
 
 ## Visitor stats
 
@@ -63,6 +72,6 @@ Visits are counted anonymously by GoatCounter (no cookies). Only the account own
 
 ## Running it
 
-It's a plain static site with no build step. GitHub Pages hosts it for free: **Settings → Pages → Deploy from branch → `main` / root**.
+It's a plain static site with no build step. **Cloudflare Pages** hosts it for free and republishes it within a minute of any change to `main`. In Cloudflare the build settings are: framework **None**, build command **empty**, build output directory **`/`**.
 
 To preview on your own computer, run `python3 -m http.server` in this folder and open http://localhost:8000.
