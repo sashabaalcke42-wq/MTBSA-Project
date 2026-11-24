@@ -1,6 +1,6 @@
 # MTBSA-Project
 
-A small, scalable website that makes the South Australian mountain bike community easier to navigate online.
+A small, scalable website that makes the South Australian mountain bike community easier to navigate online, for every SA rider: beginners, kids and parents, experienced riders and social riders.
 
 Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a page per race in plain English, and a button out to the official entry page.
 
@@ -16,6 +16,9 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `new-to-racing.html` | Beginner guide: race types, licences, entering, what to bring. |
 | `beginner-trails.html` | Guide page: easiest trails near Adelaide, trail colours and first-ride tips. |
 | `mtb-with-kids.html` | Guide page: kid-friendly trails, riding tips and ways for kids to start racing. |
+| `experienced-riders.html` | Starter page: harder SA trails and who runs XC, enduro and DH racing. |
+| `ride-with-others.html` | Starter page: group and social rides, clubs and bike parks. |
+| `shops-and-skills.html` | Starter page: bike shops, repairs and skills clinics. Add listings only after checking the business's own page. |
 | `links.html` | Official SA sites, clubs and trail links. |
 | `where-to-ride.html` | SA trail parks in plain English, with directions. |
 | `race-day-checklist.html` + `race-day-checklist.pdf` | The packing checklist. If you change the list, ask Claude to remake the PDF too. |
