@@ -446,6 +446,10 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
 .link-list li > a:first-child { font-family: var(--display); font-size: 1.3rem; font-weight: 700; line-height: 1.15; text-decoration: none; color: var(--text); }
 .link-list li > a:first-child::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
 .link-list li::after { content: "\2197"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: var(--brand); pointer-events: none; }
+.link-list li.no-link { padding-right: 16px; }
+.link-list li.no-link:hover { border-color: var(--line); transform: none; }
+.link-list li.no-link::after { content: none; }
+.link-list li.no-link > strong { font-family: var(--display); font-size: 1.3rem; font-weight: 700; line-height: 1.15; }
 .link-list span { margin-top: 2px; }
 .link-list span a { position: relative; z-index: 1; }
 

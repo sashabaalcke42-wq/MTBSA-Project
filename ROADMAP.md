@@ -4,7 +4,7 @@ The plan for growing https://mtbsa.com.au, from launch week to the long run.
 Each phase has a clear **start** and a clear **finish line**, so you always know when to move on.
 Tick things off as you go. It's fine if a phase takes longer than planned.
 
-Last updated: 23 November 2026
+Last updated: 24 November 2026
 
 ---
 
@@ -15,6 +15,7 @@ Last updated: 23 November 2026
 - [x] New to racing guide, Where to ride, Links, Gear guide, Race day checklist
 - [x] Google Search Console set up and sitemap sent
 - [x] Visitor stats (PostHog) and the private stats dashboard (mtbsa-stats repo)
+- [x] Site broadened from new and young riders to all SA riders: starter pages for experienced riders, group rides and clubs, and shops and skills clinics
 
 ---
 
@@ -74,6 +75,11 @@ Once a month:
 ## Phase 6: Bigger ideas (later, only if it's going well)
 
 No fixed dates. Pick one at a time.
+
+- **Forums**: a place for SA riders to ask questions, find riding buddies and swap trail tips
+- **Marketplace**: buy and sell used bikes, parts and gear within SA
+- Grow the shops, clinics and group rides pages into fuller listings (ask shops and clubs to send their details)
+- Go Australia-wide once SA is solid
 
 - Results page or race reports for each round
 - Club pages (one page per SA club with what they run)
