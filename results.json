@@ -1,149 +1,21 @@
 {
- "generated": "2026-11-24T09:39:51+10:30",
- "generated_text": "Tuesday 24 November 2026, 9:39 AM",
+ "generated": "2026-11-24T10:42:28+10:30",
+ "generated_text": "Tuesday 24 November 2026, 10:42 AM",
  "checked": {
   "links": 73,
-  "blocked": 1,
+  "blocked": 3,
   "races": 29,
   "gear": 20
  },
- "suggestions": [
-  {
-   "id": "gear_stock-e673a3b2d129",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Bell Nomad 2 MIPS Helmet looks sold out at 99 Bikes",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://99bikes.com.au/products/bell-nomad-2-mips-helmet-matte-red",
-   "change": null
-  },
-  {
-   "id": "gear_stock-c3377fee93f6",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Bell Sanction 2 Full Face Helmet looks sold out at Pushys",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://www.pushys.com.au/bell-sanction-2-helmet-solid-matte-black/",
-   "change": null
-  },
-  {
-   "id": "gear_stock-abee976a628f",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "CamelBak Mini M.U.L.E. 1.5L (Kids) looks sold out at 99 Bikes",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://99bikes.com.au/products/camelbak-mini-m-u-l-e-hydration-pack-1-5l-camo",
-   "change": null
-  },
-  {
-   "id": "gear_stock-abd04fd7097b",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Crankbrothers M19 Multi-Tool looks sold out at Pushys",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://www.pushys.com.au/crank-brothers-m19-multi-tool-black-red.html",
-   "change": null
-  },
-  {
-   "id": "gear_stock-8b901e5724a8",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Five Ten Freerider Flat Shoes looks sold out at Pushys",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://www.pushys.com.au/five-ten-adidas-freerider-mtb-shoes-core-black-grey-core-black.html",
-   "change": null
-  },
-  {
-   "id": "gear_stock-e214a75e147a",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Giant Talon 2 looks sold out at Giant Australia",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://www.giant-bicycles.com/au/talon-2-2027",
-   "change": null
-  },
-  {
-   "id": "gear_stock-51e4d07176dd",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "Merida Big.Nine 80 looks sold out at 99 Bikes",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://99bikes.com.au/products/merida-big-nine-80-hardtail-mountain-bike-dark-red-black",
-   "change": null
-  },
-  {
-   "id": "gear_price-86c4477ff77a",
-   "kind": "gear_price",
-   "group": "gear",
-   "title": "ODI Elite Pro Lock-On Grips 135mm is now $49.99 at Pushys",
-   "detail": "The site says $54.99.",
-   "url": "https://www.pushys.com.au/odi-elite-pro-lock-on-v2-1-135mm-mtb-grips.html",
-   "change": {
-    "op": "csv_set",
-    "file": "gear.csv",
-    "key": "id",
-    "value": "odi-elite-pro-grips",
-    "expect": {
-     "price_aud": "54.99"
-    },
-    "set": {
-     "price_aud": "49.99",
-     "rrp_aud": "",
-     "checked": "2026-11-24"
-    }
-   }
-  },
-  {
-   "id": "gear_stock-0b386225703a",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "ODI Elite Pro Lock-On Grips 135mm looks sold out at Pushys",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://www.pushys.com.au/odi-elite-pro-lock-on-v2-1-135mm-mtb-grips.html",
-   "change": null
-  },
-  {
-   "id": "gear_stock-b88139963a20",
-   "kind": "gear_stock",
-   "group": "gear",
-   "title": "OneUp Composite Flat Pedals looks sold out at 99 Bikes",
-   "detail": "You might want to point it to another shop or swap it for something similar.",
-   "url": "https://99bikes.com.au/products/oneup-components-composite-flat-pedals-blue",
-   "change": null
-  },
-  {
-   "id": "link_broken-94b92ce4cd28",
-   "kind": "link_broken",
-   "group": "links",
-   "title": "Broken link: https://www.facebook.com/bikemelrose/",
-   "detail": "It didn't work today (error 400). It's used in links.html.",
-   "url": "https://www.facebook.com/bikemelrose/",
-   "change": null
-  },
-  {
-   "id": "link_broken-113e117266dc",
-   "kind": "link_broken",
-   "group": "links",
-   "title": "Broken link: https://www.facebook.com/p/Mount-Gambier-MTB-100076058558969/",
-   "detail": "It didn't work today (error 400). It's used in links.html.",
-   "url": "https://www.facebook.com/p/Mount-Gambier-MTB-100076058558969/",
-   "change": null
-  },
+ "suggestions": [],
+ "auto_fixed": [
   {
    "id": "link_moved-b0e4cb5b66c7",
    "kind": "link_moved",
    "group": "links",
    "title": "Link has moved: https://www.cfs.sa.gov.au/firebans",
-   "detail": "It now lives at https://www.cfs.sa.gov.au/warnings-restrictions/restrictions/total-fire-bans-ratings/. Adding swaps the old address for the new one in weather.js.",
    "url": "https://www.cfs.sa.gov.au/warnings-restrictions/restrictions/total-fire-bans-ratings/",
-   "change": {
-    "op": "replace_text",
-    "files": [
-     "weather.js"
-    ],
-    "from": "https://www.cfs.sa.gov.au/firebans",
-    "to": "https://www.cfs.sa.gov.au/warnings-restrictions/restrictions/total-fire-bans-ratings/"
-   }
+   "at": "2026-11-24T10:42:28+10:30"
   }
  ]
 }
