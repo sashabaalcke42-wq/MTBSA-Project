@@ -14,6 +14,8 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `nav.js` | Opens the menu on phones. The header and footer are the same on every page, so change them on all pages together. |
 | `og-image.png` | The picture that shows when the site is shared in Facebook, Messenger or a group chat. |
 | `new-to-racing.html` | Beginner guide: race types, licences, entering, what to bring. |
+| `beginner-trails.html` | Guide page: easiest trails near Adelaide, trail colours and first-ride tips. |
+| `mtb-with-kids.html` | Guide page: kid-friendly trails, riding tips and ways for kids to start racing. |
 | `links.html` | Official SA sites, clubs and trail links. |
 | `where-to-ride.html` | SA trail parks in plain English, with directions. |
 | `race-day-checklist.html` + `race-day-checklist.pdf` | The packing checklist. If you change the list, ask Claude to remake the PDF too. |
