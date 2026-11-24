@@ -19,7 +19,7 @@
   const METEO = 'https:' + '//api.open-meteo.com/v1/forecast';
   const CFS = 'https:' + '//cfs.geohub.sa.gov.au/server/rest/services/CFS_Custodial_Read/South_Australia_Fire_Danger_Ratings_Read/MapServer/1/query';
   const CFS_HELPER = 'api/fire-danger';
-  const CFS_PAGE = 'https://www.cfs.sa.gov.au/firebans';
+  const CFS_PAGE = 'https://www.cfs.sa.gov.au/warnings-restrictions/restrictions/total-fire-bans-ratings/';
   const BOM_PAGE = 'https://www.bom.gov.au/sa/';
   const WEATHER_DAYS = 16;   // Open-Meteo forecast length
   const KEEP_MINUTES = 30;   // how long to reuse a forecast before asking again
