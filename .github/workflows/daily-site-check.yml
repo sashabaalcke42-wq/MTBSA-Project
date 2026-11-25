@@ -1,6 +1,6 @@
 # Daily site check
 #
-# Every morning at 9 AM Adelaide time this checks the race calendars, gear
+# Every morning at 8 AM Adelaide time this checks the race calendars, gear
 # prices and links the site relies on. It saves a list of suggested changes
 # to the "site-check-data" branch, and the private stats dashboard shows that
 # list with Add and Dismiss buttons.
@@ -13,9 +13,11 @@
 #
 # Why two times? GitHub runs schedules in UTC, and Adelaide moves between
 # UTC+10:30 (daylight saving) and UTC+9:30. Both times are booked, and the
-# script only does the check on the one that is really 9 AM in Adelaide.
-#   22:30 UTC = 9:00 AM ACDT (summer, roughly Oct to Apr)
-#   23:30 UTC = 9:00 AM ACST (winter, roughly Apr to Oct)
+# script only does the check on the one that is really 8 AM in Adelaide.
+#   21:30 UTC = 8:00 AM ACDT (summer, roughly Oct to Apr)
+#   22:30 UTC = 8:00 AM ACST (winter, roughly Apr to Oct)
+#
+# GitHub can start scheduled runs late when it is busy, sometimes by hours.
 #
 # To run it now: Actions tab > Daily site check > Run workflow.
 
@@ -23,8 +25,8 @@ name: Daily site check
 
 on:
   schedule:
+    - cron: "30 21 * * *"
     - cron: "30 22 * * *"
-    - cron: "30 23 * * *"
   workflow_dispatch: {}
 
 permissions:

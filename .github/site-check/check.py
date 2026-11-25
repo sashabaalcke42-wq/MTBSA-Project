@@ -591,11 +591,11 @@ def auto_fix(suggestions, now):
 # ---------------------------------------------------------------- main
 
 def right_time(now):
-    """Two crons are booked; only run on the one that's 9 AM in Adelaide."""
+    """Two crons are booked; only run on the one that's 8 AM in Adelaide."""
     if os.environ.get("EVENT_NAME") != "schedule":
         return True
     offset = now.utcoffset().total_seconds() / 3600
-    want = {"30 22 * * *": 10.5, "30 23 * * *": 9.5}.get(os.environ.get("SCHEDULE", "").strip())
+    want = {"30 21 * * *": 10.5, "30 22 * * *": 9.5}.get(os.environ.get("SCHEDULE", "").strip())
     return want is None or want == offset
 
 
@@ -626,7 +626,7 @@ def main():
 
     now = dt.datetime.now(ADELAIDE)
     if not right_time(now):
-        print(f"Not 9 AM in Adelaide on this schedule ({now:%H:%M %Z}), skipping.")
+        print(f"Not 8 AM in Adelaide on this schedule ({now:%H:%M %Z}), skipping.")
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                 f.write("skipped=true\n")
