@@ -1,21 +1,12 @@
 {
- "generated": "2026-11-24T10:42:28+10:30",
- "generated_text": "Tuesday 24 November 2026, 10:42 AM",
+ "generated": "2026-11-25T15:27:18+10:30",
+ "generated_text": "Wednesday 25 November 2026, 3:27 PM",
  "checked": {
-  "links": 73,
+  "links": 82,
   "blocked": 3,
   "races": 29,
   "gear": 20
  },
  "suggestions": [],
- "auto_fixed": [
-  {
-   "id": "link_moved-b0e4cb5b66c7",
-   "kind": "link_moved",
-   "group": "links",
-   "title": "Link has moved: https://www.cfs.sa.gov.au/firebans",
-   "url": "https://www.cfs.sa.gov.au/warnings-restrictions/restrictions/total-fire-bans-ratings/",
-   "at": "2026-11-24T10:42:28+10:30"
-  }
- ]
+ "auto_fixed": []
 }
