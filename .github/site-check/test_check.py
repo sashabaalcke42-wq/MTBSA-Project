@@ -199,7 +199,7 @@ class AutoFix(unittest.TestCase):
         c.ROOT = self.old_root
 
     def test_safe_ones_are_fixed_and_others_wait(self):
-        now = dt.datetime(2026, 11, 24, 9, 0, tzinfo=c.ADELAIDE)
+        now = dt.datetime(2026, 11, 24, 8, 0, tzinfo=c.ADELAIDE)
         items = [
             {"id": "a", "kind": "race_date", "group": "calendar", "title": "moved",
              "change": {"op": "csv_set", "file": "races.csv", "key": "id", "value": "juniors",
@@ -224,14 +224,14 @@ class AutoFix(unittest.TestCase):
 
 
 class Clock(unittest.TestCase):
-    def test_nine_am(self):
-        summer = dt.datetime(2026, 11, 24, 9, 0, tzinfo=c.ADELAIDE)
-        winter = dt.datetime(2026, 6, 24, 9, 0, tzinfo=c.ADELAIDE)
+    def test_eight_am(self):
+        summer = dt.datetime(2026, 11, 24, 8, 0, tzinfo=c.ADELAIDE)
+        winter = dt.datetime(2026, 6, 24, 8, 0, tzinfo=c.ADELAIDE)
         os.environ["EVENT_NAME"] = "schedule"
         try:
-            os.environ["SCHEDULE"] = "30 22 * * *"
+            os.environ["SCHEDULE"] = "30 21 * * *"
             self.assertEqual((c.right_time(summer), c.right_time(winter)), (True, False))
-            os.environ["SCHEDULE"] = "30 23 * * *"
+            os.environ["SCHEDULE"] = "30 22 * * *"
             self.assertEqual((c.right_time(summer), c.right_time(winter)), (False, True))
         finally:
             os.environ.pop("EVENT_NAME")
