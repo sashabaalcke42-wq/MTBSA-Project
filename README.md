@@ -27,6 +27,9 @@ Phase 1 is a "mum friendly" race calendar: every SA MTB race in one place, a pag
 | `weather.js` | Race-day weather and fire danger on race pages and the race lists. Free, no keys. See below. |
 | `functions/api/fire-danger.js` | A tiny free Cloudflare helper that backs up the fire danger feed if the browser can't reach the CFS directly. |
 | `analytics.js` | Visitor stats with PostHog (no cookies). Feeds the private stats dashboard. The PostHog project token goes at the top. |
+| `alerts.js`, `sw.js` | **Race alerts**: the bell button, the race-page "Remind me" button and the notifications themselves. See below. |
+| `functions/api/alerts/` | Keeps the list of devices that turned alerts on (free Cloudflare KV). |
+| `functions/api/calendar.js` | A calendar feed of every race plus entry open and close days, at `/api/calendar`. Nothing to set up. |
 | `style.css` | How everything looks (works in light and dark mode, and on phones). |
 
 ## Adding a race
@@ -41,8 +44,36 @@ Add a row to `races.csv`. The columns are:
 - `ages`, `cost`, `licence`: short plain-English answers
 - `summary`: one to three sentences in your own words (don't copy the organiser's text)
 - `entry_url`: the official entry page
+- `entries_open` / `entries_close`: when entries open and close, in `YYYY-MM-DD` format. Leave them empty if you don't know. The daily site check fills them in from the EntryBoss or AusCycling page when it can.
 
 Races show on a month calendar, coloured by level. Past races stay in the file and show as finished, so people can see how the season usually runs.
+
+## Entry dates and race alerts
+
+Races show when entries open ("Entries open Wed, 9 Dec"), when they're open now, and when they've closed. Every morning the daily site check reads the dates from each upcoming race's EntryBoss or AusCycling page and fixes `races.csv` by itself.
+
+Visitors can tap **Race alerts** (calendar and home page) to get notifications on their phone or computer:
+
+- **Entries open today**, **Entries close tomorrow** and **New race added**, each one ticked or not.
+- **Remind me when entries open** on a race page, for just that race.
+- Alerts go out once a day, right after the daily site check (about 8 AM Adelaide).
+- It's standard web push, so it's free with no app, account or email. It works in Chrome, Edge, Firefox and Safari on computers and Android. **iPhone and iPad only allow it once the site is added to the Home Screen** (iOS 16.4 or newer), and the panel explains how.
+- The same panel offers a **calendar subscription** (`/api/calendar`). It puts every race, entry opening and entry closing day into any calendar app, iPhone included, and keeps itself up to date.
+
+### Turning alerts on (once, free)
+
+Until this is done the Race alerts panel only shows the calendar option, and nothing breaks.
+
+1. **Make a password for the alerts.** Any long random text, 30 characters or more (a password manager can make one). This is `ALERTS_TOKEN`.
+2. **Cloudflare:** open **Workers & Pages**, then the MTB SA Pages project.
+   - **Settings → Bindings → Add → KV namespace.** Variable name `ALERTS`. Create a new namespace called `mtbsa-alerts` and pick it. Do this for **Production** (and Preview if you want to test there).
+   - **Settings → Variables and Secrets → Add.** Type **Secret**, name `ALERTS_TOKEN`, value from step 1.
+   - **Deployments**, then **Retry deployment** on the latest one, so the new settings take effect.
+3. **GitHub:** in this repo go to **Settings → Secrets and variables → Actions → New repository secret**. Name `ALERTS_TOKEN`, the same value.
+   If mtbsa.com.au isn't pointing at Cloudflare yet, also add a **variable** (same page, Variables tab) called `SITE_URL` with the `pages.dev` address.
+4. **Actions → Daily site check → Run workflow.** The first run makes the alert keys and saves them on the site, so there's nothing else to copy. After that the bell works.
+
+Cloudflare's free KV covers about 1,000 sign-ups or changes a day, far more than this site needs. The list only holds the browser's alert address and what was ticked: no names or emails.
 
 ## Race-day weather and fire danger
 

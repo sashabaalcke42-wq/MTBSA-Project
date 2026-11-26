@@ -218,7 +218,7 @@ def new_race_row(races, name, day, venue, organiser, organiser_url, entry_url, l
         "organiser_url": organiser_url, "ages": "All ages", "cost": "See entry page",
         "licence": "AusCycling membership",
         "summary": f"{what} run by {organiser}. Check the entry page for categories and times.",
-        "entry_url": entry_url,
+        "entry_url": entry_url, "entries_open": "", "entries_close": "",
     }
 
 
@@ -276,28 +276,84 @@ def check_calendars(races, text, today, out):
                         {"op": "csv_append", "file": "races.csv", "row": row}, key=rid)
 
 
+# "Entries open on Wednesday 9 December 2026" (AusCycling) or
+# "Entries open  Tue, 24 Feb 2026 7:00 PM ACDT" (EntryBoss).
+ENTRY_WORDS = {
+    "entries_open": re.compile(r"\bEntries\s+(?:will\s+)?open(?:s)?(?:\s+on)?\b", re.I),
+    "entries_close": re.compile(r"\bEntries\s+(?:will\s+)?close(?:s)?(?:\s+on)?\b", re.I),
+}
+
+
+def page_words(raw):
+    body = re.sub(r"<script.*?</script>|<style.*?</style>", " ", raw, flags=re.S)
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", body)))
+
+
+def entry_dates(words):
+    """Finds the entries open and close dates in a page's text. Missing ones are left out."""
+    found = {}
+    for col, rx in ENTRY_WORDS.items():
+        for m in rx.finditer(words):
+            # The date has to come straight after the words, not somewhere later on.
+            after = re.sub(r"^[\s:,-]*(?:[A-Za-z]+day|Mon|Tue|Wed|Thu|Fri|Sat|Sun)?[\s,]*", "",
+                           words[m.end():m.end() + 60])
+            day = parse_day(after) if re.match(r"\d{1,2}\s+[A-Za-z]{3}", after) else None
+            if day:
+                found[col] = day
+                break
+    return found
+
+
+def suggest_entry_dates(r, got, source, url, out):
+    """Adds a suggestion when the organiser's entry dates differ from races.csv."""
+    set_ = {c: d.isoformat() for c, d in got.items() if d.isoformat() != (r.get(c) or "")}
+    if not set_ or "entries_open" not in r:
+        return
+    bits = []
+    if "entries_open" in set_:
+        bits.append(f"open {nice(got['entries_open'])}")
+    if "entries_close" in set_:
+        bits.append(f"close {nice(got['entries_close'])}")
+    out.add("race_entries", "calendar", f"Entries for {r['name']} " + " and ".join(bits),
+            f"From the {source} page.", url,
+            {"op": "csv_set", "file": "races.csv", "key": "id", "value": r["id"],
+             "expect": {c: r.get(c, "") for c in set_}, "set": set_})
+
+
+def check_entryboss_entries(races, today, out):
+    """Reads when entries open and close from each upcoming race's EntryBoss page."""
+    todo = [r for r in races if entryboss_id(r.get("entry_url"))
+            and to_date(r.get("end_date") or r["date"]) and to_date(r.get("end_date") or r["date"]) >= today]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        pages = list(pool.map(lambda r: (r, fetch_retry(r["entry_url"])), todo))
+    for r, p in pages:
+        if p.status == 200:
+            suggest_entry_dates(r, entry_dates(page_words(p.text)), "EntryBoss", r["entry_url"], out)
+
+
 AC_DATE = re.compile(
     r"\b([A-Z][a-z]{2}) (\d{1,2})(?:\s*[–-]\s*(?:([A-Z][a-z]{2}) )?(\d{1,2}))?, (\d{4})\b")
 
 
 def auscycling_page(url):
-    """Returns (title, start, end) from an AusCycling event page, or None."""
+    """Returns (title, start, end, entry_dates) from an AusCycling event page, or None."""
     p = fetch_retry(url)
     if p.status != 200:
         return None
     body = re.sub(r"<script.*?</script>|<style.*?</style>", " ", p.text, flags=re.S)
     title = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
     title = html.unescape(re.sub(r"<[^>]+>", "", title.group(1))).strip() if title else ""
+    entries = entry_dates(page_words(body))
     m = AC_DATE.search(html.unescape(re.sub(r"<[^>]+>", " ", body)))
     if not m:
-        return title, None, None
+        return title, None, None, entries
     mon, d1, mon2, d2, yr = m.groups()
     try:
         start = dt.datetime.strptime(f"{mon} {d1} {yr}", "%b %d %Y").date()
         end = dt.datetime.strptime(f"{mon2 or mon} {d2} {yr}", "%b %d %Y").date() if d2 else None
     except ValueError:
-        return title, None, None
-    return title, start, end
+        return title, None, None, entries
+    return title, start, end, entries
 
 
 def check_auscycling(races, text, today, out):
@@ -309,7 +365,8 @@ def check_auscycling(races, text, today, out):
         got = auscycling_page(url)
         if not got:
             continue  # the link check reports broken pages
-        _, day, end = got
+        _, day, end, entries = got
+        suggest_entry_dates(r, entries, "AusCycling", url, out)
         if day and day != our_day:
             change = {"op": "csv_set", "file": "races.csv", "key": "id", "value": r["id"],
                       "expect": {"date": r["date"]}, "set": {"date": day.isoformat()}}
@@ -345,6 +402,8 @@ def check_auscycling(races, text, today, out):
             row["date"] = ""  # couldn't read it: the dashboard asks for it
         elif got and got[2]:
             row["end_date"] = got[2].isoformat()
+        for col, d in (got[3] if got else {}).items():
+            row[col] = d.isoformat()
         change = {"op": "csv_append", "file": "races.csv", "row": row}
         out.add("race_new", "calendar",
                 f"New on AusCycling SA: {title}" + (f" on {nice(day)}" if day else ""),
@@ -484,9 +543,10 @@ def check_links(urls, out):
 
 # ---------------------------------------------------------------- auto-fix
 
-# Changes that come straight from the organiser or shop, so the morning check
+# Changes that come straight from the organiser or shop (including when entries
+# open and close), so the morning check
 # makes them itself. New races and heads-ups still wait for the dashboard.
-AUTO_KINDS = {"race_date", "link_moved", "gear_price"}
+AUTO_KINDS = {"race_date", "race_entries", "link_moved", "gear_price"}
 
 
 def csv_records(text):
@@ -604,6 +664,7 @@ def run(today, decided):
     out = Findings()
     check_calendars(races, text, today, out)
     check_auscycling(races, text, today, out)
+    check_entryboss_entries(races, today, out)
     check_gear(gear, today, out)
     links = collect_links()
     blocked = check_links(links, out)

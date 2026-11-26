@@ -106,6 +106,59 @@ class AusCycling(unittest.TestCase):
         self.assertEqual(new[0]["change"]["row"]["type"], "Enduro")
 
 
+class EntryDates(unittest.TestCase):
+    """When entries open and close, read from the organiser's page."""
+    AC = ('<h1>2027 AusCycling MTB National Championships</h1><div>Mar 17 – 21, 2027</div>'
+          '<p>Entries open on <strong>Wednesday 9 December 2026</strong>.</p>'
+          '<p><strong>Enter your details below to be notified when entries open.</strong></p>'
+          '<p>Entry links, pricing and key deadlines will be published when entries open.</p>')
+    EB = ('<dl><dt>Date</dt><dd>Sun, 15 Mar 2026</dd><dt>Entries open</dt>'
+          '<dd>Tue, 24 Feb 2026 7:00 PM ACDT</dd><dt>Entries close</dt>'
+          '<dd>Sun, 08 Mar 2026 11:59 PM ACDT</dd></dl>')
+
+    def tearDown(self):
+        c.fetch = c._real_fetch
+
+    def test_reads_both_sites(self):
+        self.assertEqual(c.entry_dates(c.page_words(self.AC)), {"entries_open": dt.date(2026, 12, 9)})
+        self.assertEqual(c.entry_dates(c.page_words(self.EB)),
+                         {"entries_open": dt.date(2026, 2, 24), "entries_close": dt.date(2026, 3, 8)})
+
+    def test_no_date_no_guess(self):
+        self.assertEqual(c.entry_dates("Entries open now. Racing on 9 December 2026."), {})
+        self.assertEqual(c.entry_dates("Entries opening soon"), {})
+
+    def races(self):
+        return [dict(r, entries_open="", entries_close="") for r in RACES]
+
+    def test_auscycling_suggests_and_auto_fixes(self):
+        c.fetch = FakeWeb({"mtb-national-championships": self.AC, "state=sa": ""})
+        out = c.Findings()
+        races = self.races()
+        c.check_auscycling(races, races[1]["entry_url"], TODAY, out)
+        got = [i for i in out.items if i["kind"] == "race_entries"]
+        self.assertEqual(len(got), 1)
+        self.assertEqual(got[0]["change"]["set"], {"entries_open": "2026-12-09"})
+        self.assertEqual(got[0]["change"]["expect"], {"entries_open": ""})
+        self.assertIn("race_entries", c.AUTO_KINDS)
+
+    def test_quiet_when_already_right(self):
+        c.fetch = FakeWeb({"mtb-national-championships": self.AC, "state=sa": ""})
+        out = c.Findings()
+        races = self.races()
+        races[1]["entries_open"] = "2026-12-09"
+        c.check_auscycling(races, races[1]["entry_url"], TODAY, out)
+        self.assertEqual([i for i in out.items if i["kind"] == "race_entries"], [])
+
+    def test_entryboss_upcoming_only(self):
+        c.fetch = FakeWeb({"races/32881": self.EB.replace("2026 7:00", "2026 7:00").replace("24 Feb", "20 Nov").replace("08 Mar", "04 Dec")})
+        out = c.Findings()
+        races = self.races() + [dict(self.races()[0], id="old", date="2026-01-01", entry_url="https://entryboss.cc/races/1")]
+        c.check_entryboss_entries(races, TODAY, out)
+        self.assertEqual([i["change"]["value"] for i in out.items], ["juniors"])
+        self.assertEqual(out.items[0]["change"]["set"], {"entries_open": "2026-11-20", "entries_close": "2026-12-04"})
+
+
 class Gear(unittest.TestCase):
     def tearDown(self):
         c.fetch = c.__dict__["_real_fetch"]
