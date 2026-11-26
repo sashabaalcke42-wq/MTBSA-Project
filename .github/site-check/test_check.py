@@ -124,6 +124,26 @@ class EntryDates(unittest.TestCase):
         self.assertEqual(c.entry_dates(c.page_words(self.EB)),
                          {"entries_open": dt.date(2026, 2, 24), "entries_close": dt.date(2026, 3, 8)})
 
+    def test_month_only(self):
+        page = ('<p>Entries for this event open in August 2027.</p><p>Enter your details below to be '
+                'notified when entries open.</p><h3>Registration</h3><div>Registration Opens From</div>'
+                '<div>August 2027</div><div>Until</div><div>November 2027</div><h3>Event Information</h3>')
+        self.assertEqual(c.entry_dates(c.page_words(page)),
+                         {"entries_open": c.Month(2027, 8), "entries_close": c.Month(2027, 11)})
+
+    def test_day_beats_month(self):
+        page = ('<p>Entries open on Wednesday 9 December 2026.</p><div>Registration Opens From</div>'
+                '<div>December 2026</div><h3>Event Information</h3>')
+        self.assertEqual(c.entry_dates(c.page_words(page)), {"entries_open": dt.date(2026, 12, 9)})
+
+    def test_month_never_replaces_a_day(self):
+        out = c.Findings()
+        r = dict(RACES[1], entries_open="2027-08-04", entries_close="")
+        c.suggest_entry_dates(r, {"entries_open": c.Month(2027, 8), "entries_close": c.Month(2027, 11)},
+                              "AusCycling", r["entry_url"], out)
+        self.assertEqual(out.items[0]["change"]["set"], {"entries_close": "2027-11"})
+        self.assertIn("close in November 2027", out.items[0]["title"])
+
     def test_no_date_no_guess(self):
         self.assertEqual(c.entry_dates("Entries open now. Racing on 9 December 2026."), {})
         self.assertEqual(c.entry_dates("Entries opening soon"), {})

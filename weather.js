@@ -129,20 +129,21 @@
     }).then(all => place => all[place.lat.toFixed(3) + ',' + place.lon.toFixed(3)] || {});
   }
 
-  // WMO weather codes -> plain words and an emoji.
+  // WMO weather codes -> an icon name (style.css .ic-<name>) and plain words.
+  const icon = name => '<span class="ic ic-' + name + '" aria-hidden="true"></span>';
   function describe(code) {
-    if (code === 0) return ['☀️', 'Sunny'];
-    if (code === 1) return ['🌤️', 'Mostly sunny'];
-    if (code === 2) return ['⛅', 'Partly cloudy'];
-    if (code === 3) return ['☁️', 'Cloudy'];
-    if (code === 45 || code === 48) return ['🌫️', 'Foggy'];
-    if (code >= 51 && code <= 57) return ['🌦️', 'Drizzle'];
-    if (code === 61 || code === 80) return ['🌦️', 'Light showers'];
-    if (code === 63 || code === 81) return ['🌧️', 'Rain'];
-    if (code === 65 || code === 82 || code === 66 || code === 67) return ['🌧️', 'Heavy rain'];
-    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['🌨️', 'Snow or sleet'];
-    if (code >= 95) return ['⛈️', 'Storms'];
-    return ['🌡️', 'Mixed'];
+    if (code === 0) return ['sun', 'Sunny'];
+    if (code === 1) return ['sun-cloud', 'Mostly sunny'];
+    if (code === 2) return ['sun-cloud', 'Partly cloudy'];
+    if (code === 3) return ['cloud', 'Cloudy'];
+    if (code === 45 || code === 48) return ['fog', 'Foggy'];
+    if (code >= 51 && code <= 57) return ['drizzle', 'Drizzle'];
+    if (code === 61 || code === 80) return ['drizzle', 'Light showers'];
+    if (code === 63 || code === 81) return ['rain', 'Rain'];
+    if (code === 65 || code === 82 || code === 66 || code === 67) return ['heavy-rain', 'Heavy rain'];
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86) return ['snow', 'Snow or sleet'];
+    if (code >= 95) return ['storm', 'Storms'];
+    return ['temp', 'Mixed'];
   }
 
   // ---- Fire danger and total fire bans (CFS / BoM) ----
@@ -213,11 +214,11 @@
       const banned = fire && days.filter(d => fire[d] && fire[d].ban);
       const scary = fire && days.filter(d => fire[d] && !fire[d].ban && isBad(fire[d]));
       if (banned && banned.length) {
-        html += '<div class="cond-alert ban" role="alert"><b>🔥 Total fire ban</b> declared for the ' + esc(place.district) + ' district on ' +
+        html += '<div class="cond-alert ban" role="alert"><b>' + icon('flame') + 'Total fire ban</b> declared for the ' + esc(place.district) + ' district on ' +
           banned.map(d => esc(fmtDay.format(toDate(d)))).join(' and ') +
           '. Parks and forests often close on fire ban days and races can be called off, so check with the organiser before you go.</div>';
       } else if (scary && scary.length) {
-        html += '<div class="cond-alert" role="alert"><b>⚠️ ' + esc(fire[scary[0]].rating) + ' fire danger</b> in the ' + esc(place.district) +
+        html += '<div class="cond-alert" role="alert"><b>' + icon('warning') + esc(fire[scary[0]].rating) + ' fire danger</b> in the ' + esc(place.district) +
           ' district. Some parks close on these days and the race could change, so check with the organiser before you go.</div>';
       }
 
@@ -225,8 +226,8 @@
         const w = wx && wx[d], f = fire && fire[d];
         let card = '<div class="cond-day"><p class="cond-date">' + esc(fmtDay.format(toDate(d))) + '</p>';
         if (w) {
-          const [icon, words] = describe(w.code);
-          card += '<p class="cond-main"><span class="cond-icon" aria-hidden="true">' + icon + '</span> <span><b>' + esc(words) + '</b><br>' +
+          const [name, words] = describe(w.code);
+          card += '<p class="cond-main"><span class="cond-icon">' + icon(name) + '</span> <span><b>' + esc(words) + '</b><br>' +
             Math.round(w.hi) + '° top, ' + Math.round(w.lo) + '° low</span></p>' +
             '<ul class="cond-facts">' +
               '<li>Rain: ' + (w.rainChance == null ? '?' : w.rainChance) + '% chance' + (w.rain >= 0.5 ? ', about ' + Math.round(w.rain) + ' mm' : '') + '</li>' +
@@ -260,8 +261,8 @@
   function links(district) {
     return '<p class="cond-links small">' +
       (district ? 'Fire ban district: <b>' + esc(district) + '</b> · ' : '') +
-      '<a href="' + CFS_PAGE + '" target="_blank" rel="noopener">CFS fire bans and ratings ↗</a> · ' +
-      '<a href="' + BOM_PAGE + '" target="_blank" rel="noopener">BoM forecast ↗</a></p>' +
+      '<a href="' + CFS_PAGE + '" target="_blank" rel="noopener">CFS fire bans and ratings' + icon('ext') + '</a> · ' +
+      '<a href="' + BOM_PAGE + '" target="_blank" rel="noopener">BoM forecast' + icon('ext') + '</a></p>' +
       '<p class="muted small">A guide only: always check the CFS and the organiser on the day. Weather by <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0). Fire danger from the SA CFS and the Bureau of Meteorology.</p>';
   }
 
@@ -290,9 +291,9 @@
         const f = fire && place.district && (fire[place.district.toLowerCase()] || {})[day];
         const w = pick && pick(place)[day];
         let html = '';
-        if (w) { const [icon, words] = describe(w.code); html += '<span class="wx-chip" title="' + esc(words) + '">' + icon + ' ' + Math.round(w.hi) + '°</span>'; }
-        if (f && f.ban) html += '<span class="wx-chip fire ban">🔥 Fire ban</span>';
-        else if (isBad(f)) html += '<span class="wx-chip fire">⚠️ ' + esc(f.rating) + ' fire danger</span>';
+        if (w) { const [name, words] = describe(w.code); html += '<span class="wx-chip" title="' + esc(words) + '">' + icon(name) + Math.round(w.hi) + '°</span>'; }
+        if (f && f.ban) html += '<span class="wx-chip fire ban">' + icon('flame') + 'Fire ban</span>';
+        else if (isBad(f)) html += '<span class="wx-chip fire">' + icon('warning') + esc(f.rating) + ' fire danger</span>';
         el.innerHTML = html;
       });
     });

@@ -23,12 +23,18 @@
   // Excel likes to save dates as 15/11/2026. Turn those back into 2026-11-15.
   const normDate = s => { const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s || ''); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : (s || ''); };
   const toDate = s => { const [y, m, dd] = s.split('-').map(Number); return new Date(y, m - 1, dd); };
-  // "Entries open Wed 9 Dec" under a race, same as the calendar (app.js).
+  // "Entries open Wed 9 Dec" (or "Entries open Aug 2027" when only the month is known), same as the calendar (app.js).
+  const isMonth = s => /^\d{4}-\d{2}$/.test(s || '');
+  const thisMonth = today.slice(0, 7);
+  const fmtMonthOnly = new Intl.DateTimeFormat('en-AU', { month: 'short', year: 'numeric' });
+  const after = s => isMonth(s) ? s > thisMonth : s > today;
+  const before = s => isMonth(s) ? s < thisMonth : s < today;
+  const shortDay = s => isMonth(s) ? (s === thisMonth ? 'this month' : fmtMonthOnly.format(toDate(s + '-01'))) : fmt.format(toDate(s));
   function entryChip(r) {
     const o = normDate(r.entries_open), c = normDate(r.entries_close);
     let cls = '', txt = '';
-    if (c && c < today) { cls = 'closed'; txt = 'Entries closed'; }
-    else if (o && o > today) { cls = 'soon'; txt = 'Entries open ' + fmt.format(toDate(o)); }
+    if (c && before(c)) { cls = 'closed'; txt = 'Entries closed'; }
+    else if (o && (after(o) || o === thisMonth)) { cls = 'soon'; txt = 'Entries open ' + shortDay(o); }
     else if (o || c) { cls = 'open'; txt = 'Entries open now'; }
     return txt ? '<span class="entry-chip entry-' + cls + '">' + esc(txt) + '</span>' : '';
   }

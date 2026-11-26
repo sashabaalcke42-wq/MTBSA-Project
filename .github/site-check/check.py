@@ -277,12 +277,51 @@ def check_calendars(races, text, today, out):
                         {"op": "csv_append", "file": "races.csv", "row": row}, key=rid)
 
 
-# "Entries open on Wednesday 9 December 2026" (AusCycling) or
-# "Entries open  Tue, 24 Feb 2026 7:00 PM ACDT" (EntryBoss).
+# "Entries open on Wednesday 9 December 2026" (AusCycling),
+# "Entries open  Tue, 24 Feb 2026 7:00 PM ACDT" (EntryBoss), or
+# "Entries for this event open in August 2027" (AusCycling, before the day is set).
 ENTRY_WORDS = {
-    "entries_open": re.compile(r"\bEntries\s+(?:will\s+)?open(?:s)?(?:\s+on)?\b", re.I),
-    "entries_close": re.compile(r"\bEntries\s+(?:will\s+)?close(?:s)?(?:\s+on)?\b", re.I),
+    "entries_open": re.compile(
+        r"\bEntries\s+(?:for\s+this\s+(?:event|race)\s+)?(?:will\s+)?open(?:s)?(?:\s+(?:on|in|from))?\b", re.I),
+    "entries_close": re.compile(
+        r"\bEntries\s+(?:for\s+this\s+(?:event|race)\s+)?(?:will\s+)?close(?:s)?(?:\s+(?:on|in))?\b", re.I),
 }
+# AusCycling's sidebar: "Registration Opens From August 2027 Until November 2027".
+REGISTRATION = re.compile(
+    r"\bRegistration\s+Opens\s+From\s+(.{3,40}?)(?:\s+Until\s+(.{3,40}?))?"
+    r"(?=\s+(?:Event\s+Information|Location|Pricing|Contact)\b|$)", re.I)
+MONTHS = ("January February March April May June July August September October "
+          "November December").split()
+MONTH_RE = re.compile(r"^(" + "|".join(MONTHS) + r"|" + "|".join(m[:3] for m in MONTHS) +
+                      r")\.?\s+(\d{4})\b", re.I)
+
+
+class Month:
+    """An entry date only known to the month, saved in races.csv as 2027-08."""
+
+    def __init__(self, year, month):
+        self.year, self.month = year, month
+
+    def isoformat(self):
+        return f"{self.year:04d}-{self.month:02d}"
+
+    def __eq__(self, other):
+        return isinstance(other, Month) and (self.year, self.month) == (other.year, other.month)
+
+    def __repr__(self):
+        return f"Month({self.year}, {self.month})"
+
+
+def parse_when(text):
+    """A full day (a date) or, failing that, just a month and year (a Month)."""
+    text = re.sub(r"^[\s:,-]*(?:[A-Za-z]+day|Mon|Tue|Wed|Thu|Fri|Sat|Sun)?[\s,]*", "", text)
+    if re.match(r"\d{1,2}\s+[A-Za-z]{3}", text):
+        return parse_day(text)
+    m = MONTH_RE.match(text)
+    if m:
+        n = next(i for i, name in enumerate(MONTHS, 1) if name.lower().startswith(m.group(1).lower()[:3]))
+        return Month(int(m.group(2)), n)
+    return None
 
 
 def page_words(raw):
@@ -291,30 +330,45 @@ def page_words(raw):
 
 
 def entry_dates(words):
-    """Finds the entries open and close dates in a page's text. Missing ones are left out."""
+    """Finds the entries open and close dates in a page's text. Missing ones are left out.
+
+    A full day wins over a month: "Entries open on 9 December 2026" beats
+    "Registration opens from December 2026".
+    """
     found = {}
     for col, rx in ENTRY_WORDS.items():
         for m in rx.finditer(words):
             # The date has to come straight after the words, not somewhere later on.
-            after = re.sub(r"^[\s:,-]*(?:[A-Za-z]+day|Mon|Tue|Wed|Thu|Fri|Sat|Sun)?[\s,]*", "",
-                           words[m.end():m.end() + 60])
-            day = parse_day(after) if re.match(r"\d{1,2}\s+[A-Za-z]{3}", after) else None
+            day = parse_when(words[m.end():m.end() + 60])
             if day:
                 found[col] = day
                 break
+    reg = REGISTRATION.search(words)
+    if reg:
+        for col, txt in (("entries_open", reg.group(1)), ("entries_close", reg.group(2))):
+            day = parse_when(txt or "")
+            if day and (col not in found or (isinstance(found[col], Month) and not isinstance(day, Month))):
+                found[col] = day
     return found
+
+
+def nice_entry(d):
+    return f"in {MONTHS[d.month - 1]} {d.year}" if isinstance(d, Month) else nice(d)
 
 
 def suggest_entry_dates(r, got, source, url, out):
     """Adds a suggestion when the organiser's entry dates differ from races.csv."""
-    set_ = {c: d.isoformat() for c, d in got.items() if d.isoformat() != (r.get(c) or "")}
+    # Never swap a full day on the site for just the month the page gives.
+    set_ = {c: d.isoformat() for c, d in got.items()
+            if d.isoformat() != (r.get(c) or "")
+            and not (isinstance(d, Month) and (r.get(c) or "").startswith(d.isoformat() + "-"))}
     if not set_ or "entries_open" not in r:
         return
     bits = []
     if "entries_open" in set_:
-        bits.append(f"open {nice(got['entries_open'])}")
+        bits.append(f"open {nice_entry(got['entries_open'])}")
     if "entries_close" in set_:
-        bits.append(f"close {nice(got['entries_close'])}")
+        bits.append(f"close {nice_entry(got['entries_close'])}")
     out.add("race_entries", "calendar", f"Entries for {r['name']} " + " and ".join(bits),
             f"From the {source} page.", url,
             {"op": "csv_set", "file": "races.csv", "key": "id", "value": r["id"],

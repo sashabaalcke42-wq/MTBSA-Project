@@ -186,7 +186,8 @@
       b.hidden = publicKey === null || publicKey === false;
       const on = !!(state && state.races.includes(b.dataset.follow));
       b.setAttribute('aria-pressed', on);
-      b.textContent = on ? 'Reminder on ✓' : (b.dataset.label || 'Remind me');
+      b.textContent = on ? 'Reminder on' : (b.dataset.label || 'Remind me');
+      b.classList.toggle('ic-after', on); b.classList.toggle('ic-check', on);
     });
   }
 

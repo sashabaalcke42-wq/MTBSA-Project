@@ -110,7 +110,7 @@
         (g.our_take ? '<p class="our-take"><strong>Our take:</strong> ' + esc(g.our_take) + '</p>' : '') +
         '<p>' + esc(g.what_it_is) + '</p>' +
         '<dl class="gear-take"><dt>Good for</dt><dd>' + esc(g.good_for) + '</dd><dt>Watch out</dt><dd>' + esc(g.watch_out) + '</dd></dl>' +
-        '<a class="btn btn-main" href="' + esc(safeUrl(g.shop_url)) + '" target="_blank" rel="noopener">See it at ' + esc(g.shop) + ' ↗</a>' +
+        '<a class="btn btn-main" href="' + esc(safeUrl(g.shop_url)) + '" target="_blank" rel="noopener">See it at ' + esc(g.shop) + '<span class="ic ic-ext" aria-hidden="true"></span></a>' +
         '<p class="gear-checked">Price checked at ' + esc(g.shop) + (fmtDate(g.checked) ? ' on ' + esc(fmtDate(g.checked)) : '') + '. ' + (g.tested ? 'Tested by us.' : 'Researched, not tested by us.') + '</p>' +
       '</div>';
     detail.querySelector('.gd-close').addEventListener('click', () => dialog.close());
