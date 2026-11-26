@@ -714,6 +714,19 @@ def right_time(now):
     return want is None or want == offset
 
 
+def ran_today(results_path, today):
+    """True if a check already saved results today (Adelaide date).
+
+    The stats dashboard's Cloudflare timer starts the check at 8 AM on the dot.
+    GitHub's own schedule stays as a backup, because it can start hours late,
+    so it only does the check if nothing has run yet today."""
+    try:
+        got = json.loads(Path(results_path).read_text()).get("generated", "")
+        return dt.datetime.fromisoformat(got).astimezone(ADELAIDE).date() == today
+    except (OSError, ValueError, TypeError, AttributeError):
+        return False
+
+
 def run(today, decided):
     races, gear, text = read_csv("races.csv"), read_csv("gear.csv"), site_text()
     out = Findings()
@@ -743,6 +756,12 @@ def main():
     now = dt.datetime.now(ADELAIDE)
     if not right_time(now):
         print(f"Not 8 AM in Adelaide on this schedule ({now:%H:%M %Z}), skipping.")
+        if os.environ.get("GITHUB_OUTPUT"):
+            with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                f.write("skipped=true\n")
+        return
+    if os.environ.get("EVENT_NAME") == "schedule" and args.out and ran_today(args.out, now.date()):
+        print("Today's check has already run (started on time from Cloudflare), so this backup run is skipping.")
         if os.environ.get("GITHUB_OUTPUT"):
             with open(os.environ["GITHUB_OUTPUT"], "a") as f:
                 f.write("skipped=true\n")

@@ -1,9 +1,11 @@
 """Checks for the daily site check. Run: python3 .github/site-check/test_check.py"""
 import datetime as dt
+import json
 import http.server
 import os
 import sys
 import threading
+from pathlib import Path
 import unittest
 
 sys.dont_write_bytecode = True
@@ -308,6 +310,19 @@ class Clock(unittest.TestCase):
             self.assertEqual((c.right_time(summer), c.right_time(winter)), (False, True))
         finally:
             os.environ.pop("EVENT_NAME")
+
+    def test_backup_skips_if_already_ran_today(self):
+        import tempfile
+        today = dt.date(2026, 11, 27)
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "results.json"
+            self.assertFalse(c.ran_today(f, today))  # no file yet
+            f.write_text(json.dumps({"generated": "2026-11-27T08:00:41+10:30"}))
+            self.assertTrue(c.ran_today(f, today))
+            f.write_text(json.dumps({"generated": "2026-11-26T08:21:31+10:30"}))
+            self.assertFalse(c.ran_today(f, today))
+            f.write_text("not json")
+            self.assertFalse(c.ran_today(f, today))
 
 
 c._real_fetch = c.fetch
