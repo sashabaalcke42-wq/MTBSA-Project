@@ -33,7 +33,8 @@
     const yearEnd = yr.getFullYear() + '-' + String(yr.getMonth() + 1).padStart(2, '0') + '-' + String(yr.getDate()).padStart(2, '0');
     const inYear = upcoming.filter(r => r.date <= yearEnd).length;
     if (stats && inYear) { document.getElementById('st-races').textContent = inYear; stats.hidden = false; }
-    const next = upcoming.slice(0, 3);
+    // Only races inside that same window, so the home page never lists a race the calendar hides.
+    const next = upcoming.filter(r => r.date <= yearEnd).slice(0, 3);
     if (!next.length) { list.innerHTML = '<li class="empty">No upcoming races listed yet. New dates get added as clubs announce them.</li>'; return; }
     list.innerHTML = next.map(r => {
       const lvl = LEVELS.includes((r.level || '').toLowerCase()) ? r.level.toLowerCase() : 'club';
