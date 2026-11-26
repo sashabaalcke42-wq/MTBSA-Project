@@ -46,8 +46,9 @@ MTB_WORDS = re.compile(
 CANCELLED = re.compile(r"cancel|postpon", re.I)
 
 # Hosts that aren't pages people click (fonts, analytics, schema markup).
+# calendar.google.com is the "add to Google Calendar" button, built in alerts.js.
 SKIP_HOSTS = {"fonts.googleapis.com", "fonts.gstatic.com", "schema.org",
-              "www.w3.org", "gc.zgo.at"}
+              "www.w3.org", "gc.zgo.at", "calendar.google.com"}
 SKIP_HOST_SUFFIXES = (".posthog.com", ".goatcounter.com")
 # These always turn away automatic visitors, so their links can't be checked.
 BLOCKS_ROBOTS = ("facebook.com", "instagram.com")
