@@ -22,7 +22,11 @@
 #   21:30 UTC = 8:00 AM ACDT (summer, roughly Oct to Apr)
 #   22:30 UTC = 8:00 AM ACST (winter, roughly Apr to Oct)
 #
-# GitHub can start scheduled runs late when it is busy, sometimes by hours.
+# Starting on time: GitHub's free schedules can start hours late (or not at
+# all) when GitHub is busy. So the stats dashboard's Cloudflare Worker starts
+# this check at 8 AM on the dot (a "Run workflow" from its timer). The GitHub
+# schedule above stays as a backup: if a check has already run today it skips,
+# so it only does anything when the Cloudflare timer didn't get through.
 #
 # To run it now: Actions tab > Daily site check > Run workflow.
 
