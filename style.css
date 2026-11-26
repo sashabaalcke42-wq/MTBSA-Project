@@ -494,3 +494,39 @@ h1 { font-size: 2.2rem; line-height: 1.05; margin: 0 0 8px; text-transform: uppe
   .cl label { padding: 3px 0; font-size: 0.9rem; border-color: #ccc; }
   .cl input { appearance: none; -webkit-appearance: none; border: 1.5px solid #000; border-radius: 3px; width: 14px; height: 14px; }
 }
+
+/* ---- Entry dates and race alerts (app.js, home.js, alerts.js) ---- */
+.entry-chip { display: inline-block; align-self: flex-start; margin-top: 4px; font-size: 0.8rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--text); }
+.entry-soon { border-color: color-mix(in srgb, var(--brand) 55%, transparent); background: color-mix(in srgb, var(--brand) 10%, transparent); }
+.entry-open { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.entry-closed { color: var(--muted); }
+.entry-line { display: inline-block; margin: 0 0 12px; padding: 6px 12px; border-radius: 10px; font-weight: 700; border: 1px solid var(--line); }
+.follow-msg { margin: -12px 0 18px; max-width: 640px; }
+.follow-msg:empty { display: none; }
+.btn[hidden] { display: none; }
+.btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.alerts-btn::before { content: "🔔 "; }
+.hero-cta { margin: 14px 0 0; }
+.home-head-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.alerts-dialog { border: 0; padding: 0; border-radius: 18px; width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); background: var(--card); color: var(--text); box-shadow: 0 30px 80px rgba(0,0,0,0.45); }
+.alerts-dialog::backdrop { background: rgba(8, 12, 10, 0.65); }
+.alerts-panel { position: relative; padding: 22px 22px 18px; }
+.alerts-panel h2 { margin: 0 36px 8px 0; font-size: 1.6rem; text-transform: uppercase; }
+.alerts-panel h3 { margin: 22px 0 6px; font-size: 1.1rem; }
+.alerts-panel .actions { margin: 14px 0 6px; }
+.alerts-x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: var(--text); font-size: 1.5rem; line-height: 1; cursor: pointer; }
+.alerts-opts { border: 0; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.alerts-opt { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+.alerts-opt input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--accent); flex: none; }
+.alerts-opt small { display: block; color: var(--muted); font-size: 0.9rem; }
+.alerts-msg { font-weight: 700; color: var(--accent); margin: 6px 0; }
+.alerts-msg:empty { display: none; }
+.alerts-steps { margin: 8px 0; padding-left: 22px; }
+.alerts-steps li { margin: 4px 0; }
+.alerts-cal { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+@media (max-width: 520px) {
+  .home-head { flex-wrap: wrap; }
+  .home-head-btns { width: 100%; justify-content: flex-start; }
+  .alerts-panel { padding: 18px 16px 14px; }
+}
+.alerts-panel .callout > p:first-child { margin-top: 0; }

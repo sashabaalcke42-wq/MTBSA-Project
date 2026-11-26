@@ -54,6 +54,15 @@
   const endOf = r => r.end_date || r.date;
   const isPast = r => endOf(r) < todayISO;
   const onDay = (r, day) => r.date <= day && day <= endOf(r);
+  // When entries open and close (races.csv entries_open / entries_close, kept fresh by the daily site check).
+  function entries(r) {
+    if (isPast(r)) return null;
+    const o = r.entries_open, c = r.entries_close;
+    if (c && c < todayISO) return { cls: 'closed', short: 'Entries closed', long: 'Online entries closed on ' + fmtLong.format(toDate(c)) };
+    if (o && o > todayISO) return { cls: 'soon', short: 'Entries open ' + fmtShort.format(toDate(o)), long: 'Entries open on ' + fmtLong.format(toDate(o)) };
+    if (o || c) return { cls: 'open', short: 'Entries open now', long: 'Entries are open' + (c ? ' until ' + fmtLong.format(toDate(c)) : '') };
+    return null;
+  }
   function when(r, fmt) {
     return r.end_date && r.end_date !== r.date
       ? fmt.format(toDate(r.date)) + ' to ' + fmt.format(toDate(r.end_date))
@@ -152,6 +161,7 @@
       '<span class="race-body"><span class="race-when">' + esc(when(r, fmtShort)) + (isPast(r) ? ' · finished' : '') + '</span>' +
       '<span class="race-name">' + esc(r.name) + '</span>' +
       '<span class="race-where">' + esc(r.venue === 'See entry page' ? r.region : r.venue) + '</span>' +
+      (entries(r) ? '<span class="entry-chip entry-' + entries(r).cls + '">' + esc(entries(r).short) + '</span>' : '') +
       (isPast(r) ? '' : '<span class="race-cond" data-cond="' + esc(r.id) + '"></span>') + '</span>' +
       tag(r) + '</a></li>';
     }).join('');
@@ -189,22 +199,29 @@
     if (!r) { location.hash = ''; return; }
     const past = isPast(r);
     const row = (k, v) => v ? '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>' : '';
+    const ent = entries(r);
+    // A reminder only makes sense while there's an open or close date still to come.
+    const remind = !past && ((r.entries_open && r.entries_open > todayISO) || (r.entries_close && r.entries_close >= todayISO));
     detailView.innerHTML =
       '<a class="back" href="#" id="back">‹ Back to calendar</a>' +
       '<p>' + tag(r) + '</p>' +
       '<h1>' + esc(r.name) + '</h1>' +
       '<p class="detail-when">' + esc(when(r, fmtLong)) + (past ? ' · finished' : '') + '</p>' +
+      (ent ? '<p class="entry-line entry-' + ent.cls + '">' + esc(ent.long) + '</p>' : '') +
       '<p class="detail-summary">' + esc(r.summary) + '</p>' +
       '<div class="actions">' +
         '<a class="btn btn-main" href="' + esc(safeUrl(r.entry_url)) + '" target="_blank" rel="noopener">' + (past ? 'Results and info' : 'Enter on the official page') + ' ↗</a>' +
+        (remind ? '<button class="btn" type="button" data-follow="' + esc(r.id) + '" data-label="' + (r.entries_open > todayISO ? 'Remind me when entries open' : 'Remind me before entries close') + '" hidden></button>' : '') +
         (past ? '' : '<button class="btn" id="add-cal" type="button">Add to my calendar</button><a class="btn" href="race-day-checklist.html">Race-day checklist</a>') +
       '</div>' +
+      (remind ? '<p class="follow-msg muted small" id="follow-msg" aria-live="polite"></p>' : '') +
       (past ? '' : '<section class="conditions" id="conditions" aria-live="polite"></section>') +
       '<dl class="facts">' +
         row('Where', esc(r.venue === 'See entry page' ? r.region + ' (venue on the entry page)' : r.venue + ', ' + r.region)) +
         row('Race type', esc(r.type)) +
         row('Who can ride', esc(r.ages)) +
         row('Cost', esc(r.cost)) +
+        row('Entries', ent || past ? '' : 'Opening and closing dates are on the entry page') +
         row('Licence', esc(r.licence) + ' · <a href="new-to-racing.html#licence">what\'s this?</a>') +
         row('Run by', '<a href="' + esc(safeUrl(r.organiser_url)) + '" target="_blank" rel="noopener">' + esc(r.organiser) + '</a>') +
       '</dl>' +
@@ -212,6 +229,7 @@
     $('back').addEventListener('click', e => { e.preventDefault(); cameFromCalendar ? history.back() : (location.hash = ''); });
     const b = $('add-cal'); if (b) b.addEventListener('click', () => downloadICS(r));
     if (!past && window.RaceWeather) window.RaceWeather.fill($('conditions'), r);
+    if (window.RaceAlerts) window.RaceAlerts.refresh();
   }
 
   function route() {
@@ -245,6 +263,7 @@
       if (r.summary) e.description = r.summary;
       if (r.organiser) e.organizer = { '@type': 'Organization', name: r.organiser, url: r.organiser_url || undefined };
       if (r.entry_url) e.offers = { '@type': 'Offer', url: r.entry_url, availability: 'https://schema.org/InStock' };
+      if (e.offers && r.entries_open) e.offers.validFrom = r.entries_open;
       return e;
     });
     if (!events.length) return;
@@ -270,7 +289,10 @@
   fetch('races.csv')
     .then(res => { if (!res.ok) throw new Error(res.status); return res.text(); })
     .then(text => {
-      races = parseCSV(text).map(r => Object.assign(r, { date: normDate(r.date), end_date: normDate(r.end_date) }))
+      races = parseCSV(text).map(r => Object.assign(r, {
+        date: normDate(r.date), end_date: normDate(r.end_date),
+        entries_open: normDate(r.entries_open), entries_close: normDate(r.entries_close)
+      }))
         .filter(r => r.id && /^\d{4}-\d{2}-\d{2}$/.test(r.date)).sort((a, b) => a.date.localeCompare(b.date));
       drawLevels(); drawMonth(); route();
       addEventData();

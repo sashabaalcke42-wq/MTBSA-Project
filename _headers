@@ -9,3 +9,7 @@ https://:project.pages.dev/*
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Race alerts: browsers should always pick up the newest alert handler.
+/sw.js
+  Cache-Control: no-cache

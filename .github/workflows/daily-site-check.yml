@@ -9,6 +9,11 @@
 # organiser changed, links that moved for good, and exact shop prices. New
 # races and anything that needs a decision wait on the dashboard.
 #
+# Then it sends the morning race alerts (entries open today, entries close
+# tomorrow, new race added) to people who turned them on at mtbsa.com.au.
+# That part needs the ALERTS_TOKEN secret (see "Race alerts" in README.md),
+# and quietly does nothing until it's there.
+#
 # It's free: it only uses GitHub's built-in Actions and the free GITHUB_TOKEN.
 #
 # Why two times? GitHub runs schedules in UTC, and Adelaide moves between
@@ -86,6 +91,20 @@ jobs:
           done
           exit 1
 
+      - name: Send race alerts
+        if: steps.check.outputs.skipped != 'true'
+        continue-on-error: true   # a hiccup here never stops the dashboard results saving
+        env:
+          ALERTS_TOKEN: ${{ secrets.ALERTS_TOKEN }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$ALERTS_TOKEN" ]; then
+            echo "Race alerts aren't set up yet (no ALERTS_TOKEN secret). See README.md."
+            exit 0
+          fi
+          pip install --quiet --disable-pip-version-check pywebpush==2.5.0
+          python3 .github/site-check/alerts.py --state data/alerts-sent.json
+
       - name: Save results for the dashboard
         if: steps.check.outputs.skipped != 'true'
         run: |
@@ -93,6 +112,7 @@ jobs:
           git config user.name "MTB SA site check"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add results.json decisions.json
+          [ ! -f alerts-sent.json ] || git add alerts-sent.json
           # [CF-Pages-Skip] stops Cloudflare Pages building this branch.
           git commit -qm "[CF-Pages-Skip] Daily site check results" || { echo "No changes"; exit 0; }
           for i in 1 2 3 4; do
