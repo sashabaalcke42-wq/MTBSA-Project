@@ -55,12 +55,20 @@
   const isPast = r => endOf(r) < todayISO;
   const onDay = (r, day) => r.date <= day && day <= endOf(r);
   // When entries open and close (races.csv entries_open / entries_close, kept fresh by the daily site check).
+  // A date can be a full day (2026-12-09) or, when the organiser has only said the month, 2027-08.
+  const isMonth = s => /^\d{4}-\d{2}$/.test(s || '');
+  const fmtMonthOnly = new Intl.DateTimeFormat('en-AU', { month: 'short', year: 'numeric' });
+  const thisMonth = todayISO.slice(0, 7);
+  const after = s => isMonth(s) ? s > thisMonth : s > todayISO;   // still to come
+  const before = s => isMonth(s) ? s < thisMonth : s < todayISO;  // already gone
+  const shortDay = s => isMonth(s) ? (s === thisMonth ? 'this month' : fmtMonthOnly.format(toDate(s + '-01'))) : fmtShort.format(toDate(s));
+  const longDay = s => isMonth(s) ? (s === thisMonth ? 'later this month' : 'in ' + fmtMonth.format(toDate(s + '-01'))) : 'on ' + fmtLong.format(toDate(s));
   function entries(r) {
     if (isPast(r)) return null;
     const o = r.entries_open, c = r.entries_close;
-    if (c && c < todayISO) return { cls: 'closed', short: 'Entries closed', long: 'Online entries closed on ' + fmtLong.format(toDate(c)) };
-    if (o && o > todayISO) return { cls: 'soon', short: 'Entries open ' + fmtShort.format(toDate(o)), long: 'Entries open on ' + fmtLong.format(toDate(o)) };
-    if (o || c) return { cls: 'open', short: 'Entries open now', long: 'Entries are open' + (c ? ' until ' + fmtLong.format(toDate(c)) : '') };
+    if (c && before(c)) return { cls: 'closed', short: 'Entries closed', long: 'Online entries closed ' + longDay(c) };
+    if (o && (after(o) || (isMonth(o) && o === thisMonth))) return { cls: 'soon', short: 'Entries open ' + shortDay(o), long: 'Entries open ' + longDay(o) + (c ? ' and close ' + longDay(c) : '') };
+    if (o || c) return { cls: 'open', short: 'Entries open now', long: 'Entries are open' + (c ? ' and close ' + longDay(c) : '') };
     return null;
   }
   function when(r, fmt) {
@@ -200,8 +208,11 @@
     const past = isPast(r);
     const row = (k, v) => v ? '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>' : '';
     const ent = entries(r);
+    // SA weather and CFS fire danger don't apply to interstate races.
+    const interstate = r.region === 'Interstate';
+    const showConditions = !past && !interstate;
     // A reminder only makes sense while there's an open or close date still to come.
-    const remind = !past && ((r.entries_open && r.entries_open > todayISO) || (r.entries_close && r.entries_close >= todayISO));
+    const remind = !past && ((r.entries_open && after(r.entries_open)) || (r.entries_close && !before(r.entries_close)));
     detailView.innerHTML =
       '<a class="back" href="#" id="back">‹ Back to calendar</a>' +
       '<p>' + tag(r) + '</p>' +
@@ -210,14 +221,14 @@
       (ent ? '<p class="entry-line entry-' + ent.cls + '">' + esc(ent.long) + '</p>' : '') +
       '<p class="detail-summary">' + esc(r.summary) + '</p>' +
       '<div class="actions">' +
-        '<a class="btn btn-main" href="' + esc(safeUrl(r.entry_url)) + '" target="_blank" rel="noopener">' + (past ? 'Results and info' : 'Enter on the official page') + ' ↗</a>' +
-        (remind ? '<button class="btn" type="button" data-follow="' + esc(r.id) + '" data-label="' + (r.entries_open > todayISO ? 'Remind me when entries open' : 'Remind me before entries close') + '" hidden></button>' : '') +
+        '<a class="btn btn-main" href="' + esc(safeUrl(r.entry_url)) + '" target="_blank" rel="noopener">' + (past ? 'Results and info' : 'Enter on the official page') + '<span class="ic ic-ext" aria-hidden="true"></span></a>' +
+        (remind ? '<button class="btn" type="button" data-follow="' + esc(r.id) + '" data-label="' + (r.entries_open && after(r.entries_open) ? 'Remind me when entries open' : 'Remind me before entries close') + '" hidden></button>' : '') +
         (past ? '' : '<button class="btn" id="add-cal" type="button">Add to my calendar</button><a class="btn" href="race-day-checklist.html">Race-day checklist</a>') +
       '</div>' +
       (remind ? '<p class="follow-msg muted small" id="follow-msg" aria-live="polite"></p>' : '') +
-      (past ? '' : '<section class="conditions" id="conditions" aria-live="polite"></section>') +
+      (showConditions ? '<section class="conditions" id="conditions" aria-live="polite"></section>' : '') +
       '<dl class="facts">' +
-        row('Where', esc(r.venue === 'See entry page' ? r.region + ' (venue on the entry page)' : r.venue + ', ' + r.region)) +
+        row('Where', esc(r.venue === 'See entry page' ? r.region + ' (venue on the entry page)' : interstate ? r.venue : r.venue + ', ' + r.region)) +
         row('Race type', esc(r.type)) +
         row('Who can ride', esc(r.ages)) +
         row('Cost', esc(r.cost)) +
@@ -228,7 +239,7 @@
       '<p class="muted small">Details can change, so check the official page before you go.</p>';
     $('back').addEventListener('click', e => { e.preventDefault(); cameFromCalendar ? history.back() : (location.hash = ''); });
     const b = $('add-cal'); if (b) b.addEventListener('click', () => downloadICS(r));
-    if (!past && window.RaceWeather) window.RaceWeather.fill($('conditions'), r);
+    if (showConditions && window.RaceWeather) window.RaceWeather.fill($('conditions'), r);
     if (window.RaceAlerts) window.RaceAlerts.refresh();
   }
 
@@ -263,7 +274,7 @@
       if (r.summary) e.description = r.summary;
       if (r.organiser) e.organizer = { '@type': 'Organization', name: r.organiser, url: r.organiser_url || undefined };
       if (r.entry_url) e.offers = { '@type': 'Offer', url: r.entry_url, availability: 'https://schema.org/InStock' };
-      if (e.offers && r.entries_open) e.offers.validFrom = r.entries_open;
+      if (e.offers && /^\d{4}-\d{2}-\d{2}$/.test(r.entries_open)) e.offers.validFrom = r.entries_open;
       return e;
     });
     if (!events.length) return;

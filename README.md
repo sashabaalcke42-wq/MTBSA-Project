@@ -44,7 +44,7 @@ Add a row to `races.csv`. The columns are:
 - `ages`, `cost`, `licence`: short plain-English answers
 - `summary`: one to three sentences in your own words (don't copy the organiser's text)
 - `entry_url`: the official entry page
-- `entries_open` / `entries_close`: when entries open and close, in `YYYY-MM-DD` format. Leave them empty if you don't know. The daily site check fills them in from the EntryBoss or AusCycling page when it can.
+- `entries_open` / `entries_close`: when entries open and close, in `YYYY-MM-DD` format, or `YYYY-MM` when the organiser has only announced the month (shows as "Entries open Aug 2027"). Leave them empty if you don't know. The daily site check fills them in from the EntryBoss or AusCycling page when it can.
 
 Races show on a month calendar, coloured by level. Past races stay in the file and show as finished, so people can see how the season usually runs.
 
