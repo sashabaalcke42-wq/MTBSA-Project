@@ -1,6 +1,6 @@
 {
- "generated": "2026-11-26T08:21:31+10:30",
- "generated_text": "Thursday 26 November 2026, 8:21 AM",
+ "generated": "2026-11-27T09:06:30+10:30",
+ "generated_text": "Friday 27 November 2026, 9:06 AM",
  "checked": {
   "links": 82,
   "blocked": 3,
@@ -8,14 +8,5 @@
   "gear": 20
  },
  "suggestions": [],
- "auto_fixed": [
-  {
-   "id": "gear_price-58b4dd72ed2b",
-   "kind": "gear_price",
-   "group": "gear",
-   "title": "OneUp Aluminium Flat Pedals is now $193.95 at The Odd Spoke",
-   "url": "https://theoddspoke.com.au/products/oneup-components-oneup-aluminium-flat-mtb-pedals",
-   "at": "2026-11-26T08:21:31+10:30"
-  }
- ]
+ "auto_fixed": []
 }
